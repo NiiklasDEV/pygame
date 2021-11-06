@@ -8,7 +8,9 @@ class Settings(object):
     path_file = os.path.dirname(os.path.abspath(__file__))
     path_image = os.path.join(path_file, "images")
     pacman_size = (25,25)
-    Ghosts_size = (25,25)
+    size1 = randint(15,40)
+    size2 = randint(15,40)
+    Ghosts_size = (size1,size2)
     title = "Pacman Pygame"
 
 class Background(pygame.sprite.Sprite):
