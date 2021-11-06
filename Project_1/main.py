@@ -1,6 +1,6 @@
 import pygame
 import os
-from random import randint
+from random import randint, random
 
 class Settings(object):
     window_height = 600
@@ -59,9 +59,9 @@ class Ghosts(pygame.sprite.Sprite):
         self.image = pygame.image.load(os.path.join(Settings.path_image, filename)).convert_alpha()
         self.image = pygame.transform.scale(self.image, Settings.Ghosts_size)
         self.rect = self.image.get_rect()
-        self.rect.left = 1
+        self.rect.left = randint(1,650)
         self.rect.top = 1
-        self.speed_h = randint(1,3)
+        self.speed_h = 0
         self.speed_v = randint(1,3)
 
     def update(self):
