@@ -27,7 +27,7 @@ class Background(pygame.sprite.Sprite):
         pass
 
 
-class Pacman(pygame.sprite.Sprite):
+class Player(pygame.sprite.Sprite):
     def __init__(self, filename) -> None:
         super().__init__()
         self.image = pygame.image.load(os.path.join(Settings.path_image, filename)).convert_alpha()
@@ -89,14 +89,14 @@ class Game(object):
         pygame.display.set_caption(Settings.title)
         self.clock = pygame.time.Clock()
         self.background = Background("background03.png")
-        self.pacmans = pygame.sprite.Group()
+        self.player = pygame.sprite.Group()
         self.Meteors = pygame.sprite.Group()
         self.running = True
 
 
-    def spawnpacmans(self,num):
+    def spawnplayer(self,num):
         for i in range(num):
-            self.pacmans.add(Pacman("pacman.png"))
+            self.player.add(Pacman("player.png"))
 
     def spawnMeteors(self,num):
         for count in range(num):
@@ -104,14 +104,14 @@ class Game(object):
 
 
     def collide(self):
-        for pacman in self.pacmans:
+        for pacman in self.player:
             for Meteors in self.Meteors:
                 self.radius = 25
                 if pygame.sprite.collide_circle(pacman,Meteors): 
                     self.Meteors.remove(Meteors)
 
     def delete_bottom(self):
-        for pacman in self.pacmans:
+        for pacman in self.player:
             for Meteors in self.Meteors:
                     self.radius = 25
                     if pygame.sprite.collide_circle(pacman,Meteors): 
@@ -119,7 +119,7 @@ class Game(object):
                         self.spawnMeteors(1)
     
     def run(self):
-        self.spawnpacmans(5)
+        self.spawnplayer(5)
         self.spawnMeteors(10)
         while self.running:
             self.clock.tick(60)                         # Auf 1/60 Sekunde takten
@@ -139,14 +139,14 @@ class Game(object):
                 self.running = False
 
     def update(self):
-        self.pacmans.update()
+        self.player.update()
     
     def update2(self):
         self.Meteors.update()
 
     def draw(self):
         self.background.draw(self.screen)
-        self.pacmans.draw(self.screen)
+        self.player.draw(self.screen)
         self.Meteors.draw(self.screen)
         pygame.display.flip()
 
