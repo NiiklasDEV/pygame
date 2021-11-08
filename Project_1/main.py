@@ -8,8 +8,8 @@ class Settings(object):
     path_file = os.path.dirname(os.path.abspath(__file__))
     path_image = os.path.join(path_file, "images")
     player_size = (25,25)
-    size1 = 25
-    size2 = 25
+    size1 = randint(25,75)
+    size2 = randint(25,75)
     Meteors_size = (size1,size2)
     title = "player Pygame"
 
@@ -41,30 +41,18 @@ class Player(pygame.sprite.Sprite):
         self.speed_h = 0
         self.speed_v = 0
 
+    
     def movement(self,x,y):
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:        
                 if event.key == pygame.K_UP:    
-                    self.movey += y
+                    Player.control(steps,0)
                 if event.type == pygame.K_DOWN:
-                    self.movey -= y
+                    Player.control(-steps,0)
                 if event.type == pygame.K_RIGHT:
                     self.movex += x
                 if event.type == pygame.K_LEFT:
                     self.movex -= x
-        # moving left
-        if self.movex < 0:
-            self.frame += 1
-            if self.frame > 3*ani:
-                self.frame = 0
-            self.image = self.images[self.frame//ani]
-
-        # moving right
-        if self.movex > 0:
-            self.frame += 1
-            if self.frame > 3*ani:
-                self.frame = 0
-            self.image = self.image[self.frame//ani]
 
 
 
@@ -74,8 +62,6 @@ class Player(pygame.sprite.Sprite):
         if self.rect.top <= 0 or self.rect.bottom >= Settings.window_height:
             self.change_direction_v()
         self.rect.move_ip((self.speed_h, self.speed_v))
-        self.rect.x = self.rect.x + self.movex
-        self.rect.y = self.rect.y + self.movey
 
     def draw(self, screen):
         screen.blit(self.image, self.rect)
@@ -102,7 +88,7 @@ class Meteors(pygame.sprite.Sprite):
         if self.rect.left <= 0 or self.rect.right >= Settings.window_width:
             self.change_direction_h()
         if self.rect.top <= 0 or self.rect.bottom >= Settings.window_height:
-            Game.delete_bottom()
+            Game.delete_meteors(self)
         self.rect.move_ip((self.speed_h, self.speed_v))
 
 
@@ -112,6 +98,7 @@ class Meteors(pygame.sprite.Sprite):
     def change_direction_h(self):
         self.speed_h *= -1
 
+    
 
 class Game(object):
     def __init__(self) -> None:
@@ -142,13 +129,9 @@ class Game(object):
                 if pygame.sprite.collide_circle(player,Meteors): 
                     self.Meteors.remove(Meteors)
 
-    def delete_bottom(self):
-        for player in self.player:
-            for Meteors in self.Meteors:
-                    self.radius = 25
-                    if pygame.sprite.collide_circle(player,Meteors): 
-                        self.Meteors.remove(Meteors)
-                        self.spawnMeteors(1)
+    def delete_meteors(self):
+        self.Meteors.remove(meteors)
+        self.spawnMeteors()
     
     def run(self):
         self.spawnplayer(1)
