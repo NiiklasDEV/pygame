@@ -8,9 +8,9 @@ class Settings(object):
     path_file = os.path.dirname(os.path.abspath(__file__))
     path_image = os.path.join(path_file, "images")
     pacman_size = (25,25)
-    size1 = randint(15,40)
-    size2 = randint(15,40)
-    Ghosts_size = (size1,size2)
+    size1 = 25
+    size2 = 25
+    Meteors_size = (size1,size2)
     title = "Pacman Pygame"
 
 class Background(pygame.sprite.Sprite):
@@ -55,11 +55,11 @@ class Pacman(pygame.sprite.Sprite):
         self.speed_v *= -1
 
 
-class Ghosts(pygame.sprite.Sprite):
+class Meteors(pygame.sprite.Sprite):
     def __init__(self, filename) -> None:
         super().__init__()
         self.image = pygame.image.load(os.path.join(Settings.path_image, filename)).convert_alpha()
-        self.image = pygame.transform.scale(self.image, Settings.Ghosts_size)
+        self.image = pygame.transform.scale(self.image, Settings.Meteors_size)
         self.rect = self.image.get_rect()
         self.rect.left = randint(1,650)
         self.rect.top = 1
@@ -70,7 +70,7 @@ class Ghosts(pygame.sprite.Sprite):
         if self.rect.left <= 0 or self.rect.right >= Settings.window_width:
             self.change_direction_h()
         if self.rect.top <= 0 or self.rect.bottom >= Settings.window_height:
-            self.change_direction_v()
+            Game.delete_bottom()
         self.rect.move_ip((self.speed_h, self.speed_v))
 
 
@@ -80,8 +80,6 @@ class Ghosts(pygame.sprite.Sprite):
     def change_direction_h(self):
         self.speed_h *= -1
 
-    def change_direction_v(self):
-        self.speed_v *= -1
 
 class Game(object):
     def __init__(self) -> None:
@@ -92,7 +90,7 @@ class Game(object):
         self.clock = pygame.time.Clock()
         self.background = Background("background03.png")
         self.pacmans = pygame.sprite.Group()
-        self.Ghosts = pygame.sprite.Group()
+        self.Meteors = pygame.sprite.Group()
         self.running = True
 
 
@@ -100,25 +98,29 @@ class Game(object):
         for i in range(num):
             self.pacmans.add(Pacman("pacman.png"))
 
-    def spawnghosts(self,num):
+    def spawnMeteors(self,num):
         for count in range(num):
-            self.Ghosts.add(Ghosts("geister.png"))
+            self.Meteors.add(Meteors("enemy.png"))
 
 
     def collide(self):
         for pacman in self.pacmans:
-            for ghosts in self.Ghosts:
+            for Meteors in self.Meteors:
                 self.radius = 25
-                if pygame.sprite.collide_circle(pacman,ghosts): 
-                    self.Ghosts.remove(ghosts)
-                    self.spawnghosts(1)
+                if pygame.sprite.collide_circle(pacman,Meteors): 
+                    self.Meteors.remove(Meteors)
 
-
+    def delete_bottom(self):
+        for pacman in self.pacmans:
+            for Meteors in self.Meteors:
+                    self.radius = 25
+                    if pygame.sprite.collide_circle(pacman,Meteors): 
+                        self.Meteors.remove(Meteors)
+                        self.spawnMeteors(1)
     
-
     def run(self):
         self.spawnpacmans(5)
-        self.spawnghosts(10)
+        self.spawnMeteors(10)
         while self.running:
             self.clock.tick(60)                         # Auf 1/60 Sekunde takten
             self.watch_for_events()
@@ -140,12 +142,12 @@ class Game(object):
         self.pacmans.update()
     
     def update2(self):
-        self.Ghosts.update()
+        self.Meteors.update()
 
     def draw(self):
         self.background.draw(self.screen)
         self.pacmans.draw(self.screen)
-        self.Ghosts.draw(self.screen)
+        self.Meteors.draw(self.screen)
         pygame.display.flip()
 
 
