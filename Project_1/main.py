@@ -8,8 +8,8 @@ class Settings(object):
     path_file = os.path.dirname(os.path.abspath(__file__))
     path_image = os.path.join(path_file, "images")
     player_size = (25,25)
-    size1 = randint(25,75)
-    size2 = randint(25,75)
+    size1 = randint(25,50)
+    size2 = randint(25,50)
     green = (0,255,0)
     blue = (0,0,255)
     white = (255,255,255)
@@ -41,24 +41,10 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.image.load(os.path.join(Settings.path_image, filename)).convert_alpha()
         self.image = pygame.transform.scale(self.image, Settings.player_size)
         self.rect = self.image.get_rect()
-        self.rect.left = randint(5, Settings.window_width - self.rect.width)
-        self.rect.top = randint(5, Settings.window_height - self.rect.height - 100)
+        self.rect.left = 335
+        self.rect.top = 500
         self.speed_h = 0
         self.speed_v = 0
-
-    #Geplant für die Bewegund des Spieler Sprites
-    def movement(self,x,y):
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:        
-                if event.key == pygame.K_UP:    
-                    Player.control(steps,0)
-                if event.type == pygame.K_DOWN:
-                    Player.control(-steps,0)
-                if event.type == pygame.K_RIGHT:
-                    self.movex += x
-                if event.type == pygame.K_LEFT:
-                    self.movex -= x
-
 
 
     def update(self):
@@ -117,12 +103,27 @@ class Game(object):
         self.points = 0
 
 
+    #Geplant für die Bewegund des Spieler Sprites
+    def movement(self):
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:        
+                if event.type == pygame.K_UP:    
+                    Player.rect.top += 20
+                if event.type == pygame.K_DOWN:
+                    Player.rect.top -= 20
+                if event.type == pygame.K_RIGHT:
+                    Player.rect.left += 20
+                if event.type == pygame.K_LEFT:
+                    Player.rect.left -= 20
+
+
     def die(self):
         for enemy in self.enemy:
             if enemy.rect.top <= 0 or enemy.rect.bottom >= Settings.window_height:
                 self.enemy.remove(enemy)
                 self.points += 1
                 print(self.points)
+                self.spawnenemy(1)
 
     def spawnplayer(self,num):
         for i in range(num):
@@ -150,12 +151,10 @@ class Game(object):
                 if pygame.sprite.collide_circle(player,enemy): 
                     self.enemy.remove(enemy)
 
-    
-    
 
     def run(self):
         self.spawnplayer(1)
-        self.spawnenemy(7)
+        self.spawnenemy(10)
         while self.running:
             self.clock.tick(60)                         # Auf 1/60 Sekunde takten
             self.watch_for_events()
@@ -164,6 +163,7 @@ class Game(object):
             self.draw()
             self.collide()
             self.die()
+            self.movement()
             #self.draw_points()
         pygame.quit()       
 
