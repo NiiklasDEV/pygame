@@ -1,6 +1,10 @@
+from math import dist
+from typing import Text
 import pygame
 import os
 from random import randint, random
+
+from pygame import surface
 
 class Settings(object):
     window_height = 600
@@ -8,14 +12,14 @@ class Settings(object):
     path_file = os.path.dirname(os.path.abspath(__file__))
     path_image = os.path.join(path_file, "images")
     player_size = (25,25)
-    size1 = randint(25,50)
-    size2 = randint(25,50)
+    pygame.font.init()
+    font = pygame.font.SysFont("Comic Sans MS", 30)
+    size1 = 35
+    size2 = 35
     green = (0,255,0)
     blue = (0,0,255)
     white = (255,255,255)
     enemy_size = (size1,size2)
-    pygame.font.init()
-    font = pygame.font.Font('freesansbold.ttf', 32)
     title = "Projekt Pygame"
 
 class Background(pygame.sprite.Sprite):
@@ -35,8 +39,6 @@ class Background(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self, filename) -> None:
         super().__init__()
-        self.movex = 0
-        self.movey = 0
         self.frame = 0
         self.image = pygame.image.load(os.path.join(Settings.path_image, filename)).convert_alpha()
         self.image = pygame.transform.scale(self.image, Settings.player_size)
@@ -69,6 +71,7 @@ class enemys(pygame.sprite.Sprite):
         super().__init__()
         self.image = pygame.image.load(os.path.join(Settings.path_image, filename)).convert_alpha()
         self.image = pygame.transform.scale(self.image, Settings.enemy_size)
+        self.image2 = pygame.transform.scale2x(self.image)
         self.rect = self.image.get_rect()
         self.rect.left = randint(1,650)
         self.rect.top = 1
@@ -92,7 +95,10 @@ class Game(object):
     def __init__(self) -> None:
         super().__init__()
         pygame.init()
-        pygame.font.init()
+       # self.x = 355
+        #self.y = 500
+        self.points = 0
+        self.lives = 3
         self.screen = pygame.display.set_mode((Settings.window_width, Settings.window_height))
         pygame.display.set_caption(Settings.title)
         self.clock = pygame.time.Clock()
@@ -100,22 +106,34 @@ class Game(object):
         self.player = pygame.sprite.Group()
         self.enemy = pygame.sprite.Group()
         self.running = True
-        self.points = 0
 
+    #def drawplayer(self):
+      #  Game.screen.blit(Player.image, (self.x, self.y))
 
-    #Geplant für die Bewegund des Spieler Sprites
-    def movement(self):
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:        
-                if event.type == pygame.K_UP:    
-                    Player.rect.top += 20
-                if event.type == pygame.K_DOWN:
-                    Player.rect.top -= 20
-                if event.type == pygame.K_RIGHT:
-                    Player.rect.left += 20
-                if event.type == pygame.K_LEFT:
-                    Player.rect.left -= 20
+    def drawpoints(self):
+        pointtext = Settings.font.render(f"Points: {self.points}", False, (Settings.white))
+        self.screen.blit(pointtext,(15,15))
 
+        pygame.display.flip()
+    #----------------- Bewegung überarbeiten grüne Teile sind markiert
+   # def handle_keys(self):
+    #    dist = 5
+     #   for event in pygame.event.get():
+      #      if event.type == pygame.KEYDOWN:  
+       #         if event.type == pygame.K_UP:    
+        #            self.y -= dist
+         #       if event.type == pygame.K_DOWN:
+          #          self.y += dist
+           #     if event.type == pygame.K_RIGHT:
+            #        self.x += dist
+             #   if event.type == pygame.K_LEFT:
+              #      self.x -= dist
+
+    def drawlives(self):
+        livetext = Settings.font.render(f"Lives: {self.lives}", False, (Settings.white))
+        self.screen.blit(livetext,(14,50))
+
+        pygame.display.flip()
 
     def die(self):
         for enemy in self.enemy:
@@ -134,22 +152,26 @@ class Game(object):
             self.enemy.add(enemys("enemy.png"))
 
 
-    def draw_points(self):
-        X = 400
-        Y = 400
-        text = Settings.font.render("test", True, Settings.green, Settings.blue)
-        display_surface = pygame.display.set_mode((X, Y))
-        textRect = text.get_rect()
-        while True:
-            display_surface.fill(Settings.white)
-            display_surface.blit(text, textRect)
+    #Überarbeitung nötig
+    def gameover(self):
+        for enemy in self.enemy:
+            self.enemy.remove(enemy)
+        #vorher bevor man spawnt wieder Spieler auf Position setzen (ergänzung nötig)
+        self.spawnenemy(7)
+        self.lives = 3
+        self.points = 0
+        
+
 
     def collide(self):
         for player in self.player:
             for enemy in self.enemy:
-                self.radius = 25
-                if pygame.sprite.collide_circle(player,enemy): 
+                if pygame.sprite.collide_mask(player,enemy): 
                     self.enemy.remove(enemy)
+                    if self.lives > 0:
+                        self.lives -= 1
+                    else:
+                        self.gameover()
 
 
     def run(self):
@@ -158,12 +180,16 @@ class Game(object):
         while self.running:
             self.clock.tick(60)                         # Auf 1/60 Sekunde takten
             self.watch_for_events()
+            #self.handle_keys()
+            #self.drawplayer()
             self.update()
             self.update2()
             self.draw()
+            self.drawpoints()
+            self.drawlives()
             self.collide()
             self.die()
-            self.movement()
+            
             #self.draw_points()
         pygame.quit()       
 
@@ -185,7 +211,6 @@ class Game(object):
         self.background.draw(self.screen)
         self.player.draw(self.screen)
         self.enemy.draw(self.screen)
-
         pygame.display.flip()
 
 
