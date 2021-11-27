@@ -107,10 +107,10 @@ class Game(object):
         self.player = pygame.sprite.Group()
         self.enemy = pygame.sprite.Group()
         self.running = True
-        self.curlevel = 0
 
     
-
+    # Ursprünglich für die unterschiedlichen Geschwindigkeiten gedacht.
+    # Allerdings tritt hier der selbe Fehler wie beim Movement auf (daher führe ich die Methode nicht aus)
     def leveltrigger(self):
         level1 = randint(1,2)
         level2 = randint(2,3)
@@ -133,18 +133,21 @@ class Game(object):
             if self.curlevel == 4:
                 enemys.speed_v = level4
 
+    #Malt die Punkteanzeige
     def drawpoints(self):
         pointtext = Settings.font.render(f"Points: {self.points}", False, (Settings.white))
         self.screen.blit(pointtext,(15,15))
 
         pygame.display.flip()
 
+        #Malt die Lebensanzeige
     def drawlives(self):
         livetext = Settings.font.render(f"Lives: {self.lives}", False, (Settings.white))
         self.screen.blit(livetext,(14,50))
 
         pygame.display.flip()
 
+    #Löscht die Gegner wenn sie unten ankommen und lässt automatisch einen neuen Spawnen
     def die(self):
         for enemy in self.enemy:
             if enemy.rect.top <= 0 or enemy.rect.bottom >= Settings.window_height:
@@ -162,6 +165,7 @@ class Game(object):
             self.enemys.append(enemys("enemy.png"))
             self.enemy.add(self.enemys)
 
+    #Wird ausgeführt wenn der Spieler alle seine Leben die in der Variable self.lives gespeicher wird verloren hat.
     def gameover(self):
         for enemy in self.enemy:
             self.enemy.remove(enemy)
@@ -171,7 +175,7 @@ class Game(object):
         self.points = 0
         
 
-
+    #Führt eine Kollisionsprüfung mit "Mask" durch + den Abzug der leben bei Kollision
     def collide(self):
         for player in self.player:
             for enemy in self.enemy:
@@ -195,7 +199,6 @@ class Game(object):
             self.drawpoints()
             self.drawlives()
             self.collide()
-            #self.leveltrigger()
             self.die()
         pygame.quit()       
 
@@ -204,8 +207,15 @@ class Game(object):
     def watch_for_events(self):
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
+                #Leider habe ich es auch nach 2 Stunden nicht geschafft diesen Fehler zu beheben :/
                 if event.key == pygame.K_DOWN:
                     Player.speed_v += 1
+                if event.key == pygame.K_UP:
+                    Player.speed_v -= 1
+                if event.key == pygame.K_RIGHT:
+                    Player.speed_v += 1
+                if event.key == pygame.K_LEFT:
+                    Player.speed_v -= 1
                 if event.key == pygame.K_ESCAPE:    # ESC gedrückt?
                     self.running = False
             elif event.type == pygame.QUIT:         # Fenster ge-x-t?
