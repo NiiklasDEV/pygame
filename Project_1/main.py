@@ -5,6 +5,7 @@ import os
 from random import randint, random
 
 from pygame import surface
+from pygame.constants import GL_MULTISAMPLEBUFFERS
 
 class Settings(object):
     window_height = 600
@@ -46,8 +47,11 @@ class Player(pygame.sprite.Sprite):
         self.rect.left = 335
         self.rect.top = 500
         self.speed_h = 0
-        self.speed_v = 0
+        self.speed_v = 0       
 
+    def respawn(self):
+        Player.rect.left = 335
+        Player.rect.top = 500
 
     def update(self):
         if self.rect.left <= 0 or self.rect.right >= Settings.window_width:
@@ -64,8 +68,7 @@ class Player(pygame.sprite.Sprite):
 
     def change_direction_v(self):
         self.speed_v *= -1
-
-
+ 
 class enemys(pygame.sprite.Sprite):
     def __init__(self, filename) -> None:
         super().__init__()
@@ -95,8 +98,6 @@ class Game(object):
     def __init__(self) -> None:
         super().__init__()
         pygame.init()
-       # self.x = 355
-        #self.y = 500
         self.points = 0
         self.lives = 3
         self.screen = pygame.display.set_mode((Settings.window_width, Settings.window_height))
@@ -106,28 +107,37 @@ class Game(object):
         self.player = pygame.sprite.Group()
         self.enemy = pygame.sprite.Group()
         self.running = True
+        self.curlevel = 0
 
-    #def drawplayer(self):
-      #  Game.screen.blit(Player.image, (self.x, self.y))
+    
+
+    def leveltrigger(self):
+        level1 = randint(1,2)
+        level2 = randint(2,3)
+        level3 = randint(3,4)
+        level4 = randint(4,5)
+        if self.points == 0:
+            self.curlevel = 1
+            if self.curlevel == 1:
+                enemys.speed_v = level1
+        elif self.points == 50:
+            self.curlevel = 2
+            if self.curlevel == 2:
+                enemys.speed_v = level2
+        elif self.points == 75:
+            self.curlevel = 3
+            if self.curlevel == 3:
+                enemys.speed_v = level3
+        elif self.points == 100:
+            self.curlevel = 4
+            if self.curlevel == 4:
+                enemys.speed_v = level4
 
     def drawpoints(self):
         pointtext = Settings.font.render(f"Points: {self.points}", False, (Settings.white))
         self.screen.blit(pointtext,(15,15))
 
         pygame.display.flip()
-    #----------------- Bewegung überarbeiten grüne Teile sind markiert
-   # def handle_keys(self):
-    #    dist = 5
-     #   for event in pygame.event.get():
-      #      if event.type == pygame.KEYDOWN:  
-       #         if event.type == pygame.K_UP:    
-        #            self.y -= dist
-         #       if event.type == pygame.K_DOWN:
-          #          self.y += dist
-           #     if event.type == pygame.K_RIGHT:
-            #        self.x += dist
-             #   if event.type == pygame.K_LEFT:
-              #      self.x -= dist
 
     def drawlives(self):
         livetext = Settings.font.render(f"Lives: {self.lives}", False, (Settings.white))
@@ -140,23 +150,22 @@ class Game(object):
             if enemy.rect.top <= 0 or enemy.rect.bottom >= Settings.window_height:
                 self.enemy.remove(enemy)
                 self.points += 1
-                print(self.points)
                 self.spawnenemy(1)
 
     def spawnplayer(self,num):
         for i in range(num):
-            self.player.add(Player("player.png"))
+            self.player.add(Player("Player.png"))
 
     def spawnenemy(self,num):
         for count in range(num):
-            self.enemy.add(enemys("enemy.png"))
+            self.enemys = []
+            self.enemys.append(enemys("enemy.png"))
+            self.enemy.add(self.enemys)
 
-
-    #Überarbeitung nötig
     def gameover(self):
         for enemy in self.enemy:
             self.enemy.remove(enemy)
-        #vorher bevor man spawnt wieder Spieler auf Position setzen (ergänzung nötig)
+        Player.respawn(self)
         self.spawnenemy(7)
         self.lives = 3
         self.points = 0
@@ -178,24 +187,25 @@ class Game(object):
         self.spawnplayer(1)
         self.spawnenemy(10)
         while self.running:
-            self.clock.tick(60)                         # Auf 1/60 Sekunde takten
+            self.clock.tick(60)                        
             self.watch_for_events()
-            #self.handle_keys()
-            #self.drawplayer()
             self.update()
             self.update2()
             self.draw()
             self.drawpoints()
             self.drawlives()
             self.collide()
+            #self.leveltrigger()
             self.die()
-            
-            #self.draw_points()
         pygame.quit()       
+
+
 
     def watch_for_events(self):
         for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:        # Taste unten?
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_DOWN:
+                    Player.speed_v += 1
                 if event.key == pygame.K_ESCAPE:    # ESC gedrückt?
                     self.running = False
             elif event.type == pygame.QUIT:         # Fenster ge-x-t?
@@ -212,8 +222,6 @@ class Game(object):
         self.player.draw(self.screen)
         self.enemy.draw(self.screen)
         pygame.display.flip()
-
-
 
 if __name__ == "__main__":
     os.environ["SDL_VIDEO_WINDOW_POS"] = "500, 50"
