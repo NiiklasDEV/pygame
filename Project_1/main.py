@@ -108,9 +108,6 @@ class Game(object):
         self.enemy = pygame.sprite.Group()
         self.running = True
 
-    
-    # Ursprünglich für die unterschiedlichen Geschwindigkeiten gedacht.
-    # Allerdings tritt hier der selbe Fehler wie beim Movement auf (daher führe ich die Methode nicht aus)
     def leveltrigger(self):
         level1 = randint(1,2)
         level2 = randint(2,3)
@@ -207,7 +204,6 @@ class Game(object):
     def watch_for_events(self):
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
-                #Leider habe ich es auch nach 2 Stunden nicht geschafft diesen Fehler zu beheben :/
                 if event.key == pygame.K_DOWN:
                     Player.speed_v += 1
                 if event.key == pygame.K_UP:
