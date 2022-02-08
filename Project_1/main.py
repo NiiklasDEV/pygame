@@ -156,6 +156,7 @@ class Game(object):
         for i in range(num):
             self.player.add(Player("Player.png"))
 
+            
     def spawnenemy(self,num):
         for count in range(num):
             self.enemys = []
@@ -234,3 +235,4 @@ if __name__ == "__main__":
 
     game = Game()
     game.run()
+
