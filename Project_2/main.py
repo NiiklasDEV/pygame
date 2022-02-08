@@ -22,7 +22,7 @@ class Settings(object):
     blue = (0,0,255)
     white = (255,255,255)
     enemy_size = (size1,size2)
-    title = "Projekt Pygame"
+    title = "Asteroid Clone"
 
 class Background(pygame.sprite.Sprite):
     def __init__(self, filename) -> None:
@@ -50,6 +50,11 @@ class Player(pygame.sprite.Sprite):
         self.speed_h = 0
         self.speed_v = 0       
 
+    #Rotierung des Sprites
+    #def rotate(self):
+     #   pygame.transform.rotate(Player.image.get_rect(), 22.5)
+
+    #Respawnpunkt nach Tot setzen
     def respawn(self):
         Player.rect.left = Settings.window_height/2
         Player.rect.top = Settings.window_width/2
@@ -108,10 +113,6 @@ class Game(object):
         self.player = pygame.sprite.Group()
         self.enemy = pygame.sprite.Group()
         self.running = True
-
-    #Rotierung des Sprites
-    def rotate(self, csprite):
-        pygame.transform.rotate(csprite, 22.5)
 
 
     #Malt die Punkteanzeige
@@ -190,9 +191,7 @@ class Game(object):
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RIGHT:
-                    self.playerRect = self.player.sprites[0]()
-                    self.newrect = self.playerRect.get_rect()
-                    pygame.transform.rotate(self.newrect,22.5)
+                    screen.blit(pygame.trasnform.rotate())
                 if event.key == pygame.K_LEFT:
                     Player.speed_v -= 1
                 if event.key == pygame.K_ESCAPE:    # ESC gedrückt?
@@ -217,4 +216,5 @@ if __name__ == "__main__":
 
     game = Game()
     game.run()
+    player = Player()
 
