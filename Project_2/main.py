@@ -1,5 +1,7 @@
- 
+from pickle import TRUE
+import time
 from math import dist
+from turtle import st
 from typing import Text
 import pygame
 import os
@@ -16,12 +18,10 @@ class Settings(object):
     player_size = (35,35)
     pygame.font.init()
     font = pygame.font.SysFont("Comic Sans MS", 30)
-    size1 = randint(10,80)
-    size2 = size1
+    asteroid_sizes = { "0": (25,25), "1": (50,50), "2": (65,65)}
     green = (0,255,0)
     blue = (0,0,255)
     white = (255,255,255)
-    enemy_size = (size1,size2)
     title = "Asteroid Clone"
 
 class Background(pygame.sprite.Sprite):
@@ -55,9 +55,9 @@ class Player(pygame.sprite.Sprite):
      #   pygame.transform.rotate(Player.image.get_rect(), 22.5)
 
     #Respawnpunkt nach Tot setzen
-    def respawn(self):
-        Player.rect.left = Settings.window_height/2
-        Player.rect.top = Settings.window_width/2
+    #def respawn(self):
+        #Player.rect.left = Settings.window_height/2
+        #Player.rect.top = Settings.window_width/2
 
     def update(self):
         if self.rect.left <= 0 or self.rect.right >= Settings.window_width:
@@ -75,12 +75,12 @@ class Player(pygame.sprite.Sprite):
     def change_direction_v(self):
         self.speed_v *= -1
  
-class comets(pygame.sprite.Sprite):
+class Asteroids(pygame.sprite.Sprite):
     def __init__(self, filename) -> None:
         super().__init__()
         self.image = pygame.image.load(os.path.join(Settings.path_image, filename)).convert_alpha()
-        self.image = pygame.transform.scale(self.image, Settings.enemy_size)
-        self.image2 = pygame.transform.scale2x(self.image)
+        self.image = pygame.transform.scale(self.image, Settings.asteroid_sizes[str(randint(0,2))])
+        self.big_image = pygame.transform.scale(self.image, Settings.asteroid_sizes[str(2)])
         self.rect = self.image.get_rect()
         self.rect.left = randint(1,650)
         self.rect.top = 1
@@ -98,6 +98,27 @@ class comets(pygame.sprite.Sprite):
     def change_direction_h(self):
         self.speed_h *= -1
 
+class fat_Asteroids(pygame.sprite.Sprite):
+    def __init__(self, filename) -> None:
+        super().__init__()
+        self.image = pygame.image.load(os.path.join(Settings.path_image, filename)).convert_alpha()
+        self.image = pygame.transform.scale(self.image, Settings.asteroid_sizes[str(2)])
+        self.rect = self.image.get_rect()
+        self.rect.left = randint(1,650)
+        self.rect.top = randint(1,650)
+        self.speed_h = 0
+        self.speed_v = randint(1,3)
+
+    def update(self):
+        if self.rect.left <= 0 or self.rect.right >= Settings.window_width:
+            self.change_direction_h()
+        self.rect.move_ip((self.speed_h, self.speed_v))
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+    def change_direction_h(self):
+        self.speed_h *= -1
     
 
 class Game(object):
@@ -113,7 +134,6 @@ class Game(object):
         self.player = pygame.sprite.Group()
         self.enemy = pygame.sprite.Group()
         self.running = True
-
 
     #Malt die Punkteanzeige
     def drawpoints(self):
@@ -141,18 +161,24 @@ class Game(object):
         for i in range(num):
             self.player.add(Player("Player.png"))
 
-            
     def spawnenemy(self,num):
         for count in range(num):
-            self.comets = []
-            self.comets.append(comets("enemy.png"))
-            self.enemy.add(self.comets)
+            self.Asteroids = []
+            self.Asteroids.append(Asteroids("enemy.png"))
+            self.enemy.add(self.Asteroids)
 
-    #Wird ausgeführt wenn der Spieler alle seine Leben die in der Variable self.lives gespeicher wird verloren hat.
+    def spawn_fat_enemy(self,num):
+        for count in range(num):
+            self.fat_Asteroids = []
+            self.fat_Asteroids.append(fat_Asteroids("enemy.png"))
+            self.enemy.add(self.fat_Asteroids)
+            
+
+    #Wird ausgeführt wenn der Spieler bzw. das Raumschiff einen Asteroiden berührt und setzt damit die Punkte und Leben zurück.
     def gameover(self):
         for enemy in self.enemy:
             self.enemy.remove(enemy)
-        Player.respawn(self)
+        #Player.respawn(self)
         self.spawnenemy(7)
         self.lives = 3
         self.points = 0
@@ -164,16 +190,23 @@ class Game(object):
             for enemy in self.enemy:
                 if pygame.sprite.collide_mask(player,enemy): 
                     self.enemy.remove(enemy)
-                    if self.lives > 0:
-                        self.lives -= 1
-                    else:
-                        self.gameover()
+                    self.gameover()
+                    #if self.lives > 0:
+                    #    self.lives -= 1
+                    #else:
+                    #    self.gameover()
 
-
+    
     def run(self):
+        start_time = time.time()
         self.spawnplayer(1)
         self.spawnenemy(10)
         while self.running:
+            #Für die Berechnung der 3 Sekunden + spawnen des "fat_enemys" pro 3 Sekunden + Abfrage ob mehr als 5 exestieren.
+            stop = time.time() - start_time
+            while stop / 3 == True and self.fat_Asteroids > 5:
+                self.spawn_fat_enemy(1)
+                print(stop)
             self.clock.tick(60)                        
             self.watch_for_events()
             self.update()
