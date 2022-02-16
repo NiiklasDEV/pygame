@@ -16,8 +16,8 @@ class Settings(object):
     player_size = (35,35)
     pygame.font.init()
     font = pygame.font.SysFont("Comic Sans MS", 30)
-    size1 = 35
-    size2 = 35
+    size1 = randint(10,80)
+    size2 = size1
     green = (0,255,0)
     blue = (0,0,255)
     white = (255,255,255)
