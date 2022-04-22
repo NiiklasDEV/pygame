@@ -159,7 +159,7 @@ class Game(object):
 
     def spawnplayer(self,num):
         for i in range(num):
-            self.player.add(Player("Player.png"))
+            self.player.add(Player("player.png"))
 
     def spawnenemy(self,num):
         for count in range(num):
