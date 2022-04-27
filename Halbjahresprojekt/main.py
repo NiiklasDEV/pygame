@@ -5,6 +5,7 @@ import os
 from random import randint, random
 
 from pygame import surface
+import pygame.mixer
 from pygame.constants import GL_MULTISAMPLEBUFFERS
 
 class Settings(object):
@@ -56,20 +57,65 @@ class Player(pygame.sprite.Sprite):
         if self.rect.left > 0:
             self.rect.left = self.rect.left - 5 
     def jump(self):
-        self.rect.top += self.velocity[self.velocity_index]
-        self.velocity_index += 1
-        if self.velocity_index >= len(self.velocity) -1:
-            self.velocity_index = len(self.velocity) - 1
-        if self.rect.top > self.platform_y:
-            self.rect.top = self.platform_y
-            self.jumping = False
-            self.velocity_index = 0
-
-
+        pygame.mixer.init()
+        pygame.mixer.music.load("jump.ogg")
+        pygame.mixer.music.play() 
+        if self.jumping == True:
+            self.rect.top += self.velocity[self.velocity_index]
+            self.velocity_index += 1
+            if self.velocity_index >= len(self.velocity) -1:
+                self.velocity_index = len(self.velocity) - 1
+            if self.rect.top > self.platform_y:
+                self.rect.top = self.platform_y
+                self.jumping = False
+                self.velocity_index = 0           
 
     def respawn(self):
         Player.rect.left = 335
         Player.rect.top = 500
+
+    def update(self):
+        if self.rect.left <= 0 or self.rect.right >= Settings.window_width:
+            self.change_direction_h()
+        if self.rect.top <= 0 or self.rect.bottom >= Settings.window_height:
+            self.change_direction_v()
+        self.rect.move_ip((self.speed_h, self.speed_v))
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+    def change_direction_h(self):
+        self.speed_h *= -1
+
+    def change_direction_v(self):
+        self.speed_v *= -1
+
+
+class Obstacle(pygame.sprite.Sprite):
+    def __init__(self, filename):
+        super().__init__()
+        self.frame = 0
+        self.image = pygame.image.load(os.path.join(Settings.path_image, filename)).convert_alpha()
+        self.image = pygame.transform.scale(self.image, Settings.player_size)
+        self.rect = self.image.get_rect()
+        self.rect.left = 335 #x
+        self.rect.top = 500 #y
+        self.speed_h = 0
+        self.speed_v = 0
+
+
+    def ground(self,lvl,x,y,w,h):
+        ground_list = pygame.sprite.Group()
+        if lvl == 1:
+            ground = Obstacle(x,y,w,h, self.image)
+            ground_list.add(ground)
+        return ground_list
+
+    def platform(self,lvl):
+        platform_list = pygame.sprite.Group()
+        if lvl == 1:
+            plat = Obstacle(200, worldy-97-128, 285,67,'platform.png')
+
 
     def update(self):
         if self.rect.left <= 0 or self.rect.right >= Settings.window_width:
@@ -122,6 +168,7 @@ class Game(object):
             self.watch_for_events()
             self.update()
             self.draw()
+            self.player.jump()
         pygame.quit()       
 
 
@@ -133,7 +180,6 @@ class Game(object):
             self.player.moveLeft()
         if control[pygame.K_SPACE]:
             self.player.jumping = True
-            self.player.jump()
  
 
     def watch_for_events(self):
