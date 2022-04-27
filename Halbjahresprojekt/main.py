@@ -1,4 +1,5 @@
 from math import dist
+from platform import platform
 from typing import Text
 import pygame
 import os
@@ -14,11 +15,13 @@ class Settings(object):
     path_file = os.path.dirname(os.path.abspath(__file__))
     path_image = os.path.join(path_file, "images")
     player_size = (50,75)
+    platform_size = (100,100)
     pygame.font.init()
     font = pygame.font.SysFont("Comic Sans MS", 30)
     green = (0,255,0)
     blue = (0,0,255)
     white = (255,255,255)
+    black = (0,0,0)
     title = "Galaxy Jump"
 
 class Background(pygame.sprite.Sprite):
@@ -30,6 +33,7 @@ class Background(pygame.sprite.Sprite):
 
     def draw(self, screen):
         screen.blit(self.image, self.rect)
+        
 
     def update(self):
         pass
@@ -57,9 +61,6 @@ class Player(pygame.sprite.Sprite):
         if self.rect.left > 0:
             self.rect.left = self.rect.left - 5 
     def jump(self):
-        pygame.mixer.init()
-        pygame.mixer.music.load("jump.ogg")
-        pygame.mixer.music.play() 
         if self.jumping == True:
             self.rect.top += self.velocity[self.velocity_index]
             self.velocity_index += 1
@@ -96,25 +97,18 @@ class Obstacle(pygame.sprite.Sprite):
         super().__init__()
         self.frame = 0
         self.image = pygame.image.load(os.path.join(Settings.path_image, filename)).convert_alpha()
-        self.image = pygame.transform.scale(self.image, Settings.player_size)
+        self.image = pygame.transform.scale(self.image, Settings.platform_size)
         self.rect = self.image.get_rect()
         self.rect.left = 335 #x
         self.rect.top = 500 #y
-        self.speed_h = 0
-        self.speed_v = 0
 
-
-    def ground(self,lvl,x,y,w,h):
-        ground_list = pygame.sprite.Group()
-        if lvl == 1:
-            ground = Obstacle(x,y,w,h, self.image)
-            ground_list.add(ground)
-        return ground_list
-
-    def platform(self,lvl):
-        platform_list = pygame.sprite.Group()
-        if lvl == 1:
-            plat = Obstacle(200, worldy-97-128, 285,67,'platform.png')
+    def platforms(self):
+        for p in range(game.maxplatforms):
+            p_w = random.randint(100,300)
+            p_x = random.randint(0, Settings.window_width - p_w)
+            p_y = p * random.randint(80,120)
+            platform = Obstacle(p_x,p_y,p_w)
+            self.platforms_group.add(platform)
 
 
     def update(self):
@@ -125,19 +119,13 @@ class Obstacle(pygame.sprite.Sprite):
         self.rect.move_ip((self.speed_h, self.speed_v))
 
     def draw(self, screen):
-        screen.blit(self.image, self.rect)
-
-    def change_direction_h(self):
-        self.speed_h *= -1
-
-    def change_direction_v(self):
-        self.speed_v *= -1
-
+        screen.blit(self.platform.image, self.platform.rect)
 
 class Game(object):
     def __init__(self) -> None:
         super().__init__()
         pygame.init()
+        self.pause = False
         self.points = 0
         self.lives = 3
         self.screen = pygame.display.set_mode((Settings.window_width, Settings.window_height))
@@ -145,25 +133,48 @@ class Game(object):
         self.clock = pygame.time.Clock()
         self.background = Background("background03.png")
         self.player = Player("player.png")
-        self.enemy = pygame.sprite.Group()
+        self.platform = Obstacle("platform.png")
+        self.platforms_group = pygame.sprite.Group()
         self.running = True
+        self.maxplatforms = 5
+
+    def spawnplatform(self,num):
+        for count in range(num):
+            self.platforms = []
+            self.platforms.append(Obstacle("platform.png"))
+            self.platform.add(self.platforms)
 
     #Malt die Punkteanzeige
-    def drawpoints(self):
-        pointtext = Settings.font.render(f"Points: {self.points}", False, (Settings.white))
-        self.screen.blit(pointtext,(300,500))
-
-        pygame.display.flip()
-
+    #def drawpoints(self):
+    #    pointtext = Settings.font.render(f"Points: {self.points}", False, (Settings.white))
+    #    self.screen.blit(pointtext,(300,500))
+    #    pygame.display.flip()
         #Malt die Lebensanzeige
-    def drawlives(self):
-        livetext = Settings.font.render(f"Lives: {self.lives}", False, (Settings.white))
-        self.screen.blit(livetext,(14,50))
+    #def drawlives(self):
+    #    livetext = Settings.font.render(f"Lives: {self.lives}", False, (Settings.white))
+    #    self.screen.blit(livetext,(14,50))
+    #    pygame.display.flip()
 
-        pygame.display.flip()
 
+    def pausescreen(self):
+        pause = True
+        while pause:
+            self.screen.fill(Settings.black)
+            pause_text = Settings.font.render("Pause", False, (Settings.white))
+            self.screen.blit(pause_text,(Settings.window_width/2 - 50, Settings.window_height/2 - 50))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_p:
+                        pause = False
+            pygame.display.flip()
+            
     def run(self):
         while self.running:
+            if self.pause == True:
+                self.pausescreen()
             self.clock.tick(60)                     
             self.watch_for_events()
             self.update()
@@ -180,13 +191,15 @@ class Game(object):
             self.player.moveLeft()
         if control[pygame.K_SPACE]:
             self.player.jumping = True
+        if control[pygame.K_ESCAPE]:
+            self.pausescreen()
  
-
+    
     def watch_for_events(self):
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 pass
-            elif event.type == pygame.QUIT:
+            if event.type == pygame.QUIT:
                 self.running = False
 
     def update(self):
@@ -196,7 +209,7 @@ class Game(object):
     def draw(self):
         self.background.draw(self.screen)
         self.player.draw(self.screen)
-        self.enemy.draw(self.screen)
+        self.platforms_group.draw(self.screen)
         pygame.display.flip()
 
 if __name__ == "__main__":
