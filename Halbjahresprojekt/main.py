@@ -102,7 +102,7 @@ class Obstacle(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.left = 335 #x
         self.rect.top = 500 #y
-        self.dirt_img = pygame.image.load("ground.png")
+        self.dirt_img = pygame.image.load(os.path.join(Settings.path_image, "ground.png")).convert_alpha()
         self.tile_list = []
 
     def platforms(self):
@@ -124,7 +124,7 @@ class Obstacle(pygame.sprite.Sprite):
                     img_rect.x = col_count * Settings.tile_size
                     img_rect.y = row_count * Settings.tile_size
                     tile = (img, img_rect)
-                    self.tile.list.append(tile)
+                    self.tile_list.append(tile)
                 col_count += 1
             row_count += 1
 
@@ -207,7 +207,7 @@ class Game(object):
             self.watch_for_events()
             self.update()
             self.draw()
-            Obstacle.draw()
+            Obstacle.draw(self, self.screen)
             self.player.jump()
             self.drawtiles()
         pygame.quit()       
