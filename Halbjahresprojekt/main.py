@@ -17,6 +17,7 @@ class Settings(object):
     player_size = (50,75)
     platform_size = (100,100)
     pygame.font.init()
+    tile_size = 75
     font = pygame.font.SysFont("Comic Sans MS", 30)
     green = (0,255,0)
     blue = (0,0,255)
@@ -101,6 +102,8 @@ class Obstacle(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.left = 335 #x
         self.rect.top = 500 #y
+        self.dirt_img = pygame.image.load("ground.png")
+        self.tile_list = []
 
     def platforms(self):
         for p in range(game.maxplatforms):
@@ -109,6 +112,21 @@ class Obstacle(pygame.sprite.Sprite):
             p_y = p * random.randint(80,120)
             platform = Obstacle(p_x,p_y,p_w)
             self.platforms_group.add(platform)
+    
+    def spawnground(self):
+        row_count = 0
+        for row in Game.world_data:
+            col_count = 0
+            for tile in row:
+                if tile == 1:
+                    img = pygame.transform.scale(self.dirt_img, (Settings.tile_size, Settings.tile_size))
+                    img_rect = img.get_rect()
+                    img_rect.x = col_count * Settings.tile_size
+                    img_rect.y = row_count * Settings.tile_size
+                    tile = (img, img_rect)
+                    self.tile.list.append(tile)
+                col_count += 1
+            row_count += 1
 
 
     def update(self):
@@ -120,6 +138,8 @@ class Obstacle(pygame.sprite.Sprite):
 
     def draw(self, screen):
         screen.blit(self.platform.image, self.platform.rect)
+        for tile in self.tile_list:
+            screen.blit(tile[0], tile[1])
 
 class Game(object):
     def __init__(self) -> None:
@@ -137,6 +157,14 @@ class Game(object):
         self.platforms_group = pygame.sprite.Group()
         self.running = True
         self.maxplatforms = 5
+        self.world_data = [
+            [1,1,1,1,1,1],
+            [1,0,0,0,1],
+            [1,0,0,0,1],
+            [1,0,0,0,1],
+            [1,1,1,1,1],
+            ]
+        
 
     def spawnplatform(self,num):
         for count in range(num):
@@ -179,7 +207,9 @@ class Game(object):
             self.watch_for_events()
             self.update()
             self.draw()
+            Obstacle.draw()
             self.player.jump()
+            self.drawtiles()
         pygame.quit()       
 
 
@@ -211,6 +241,14 @@ class Game(object):
         self.player.draw(self.screen)
         self.platforms_group.draw(self.screen)
         pygame.display.flip()
+    
+    def drawtiles(self):
+        for line in range(0, 25):
+            pygame.draw.line(self.screen, (255, 255, 255), (0, line * Settings.tile_size), (Settings.window_width, line * Settings.tile_size))
+            pygame.draw.line(self.screen, (255, 255, 255), (line * Settings.tile_size, 0), (line * Settings.tile_size, Settings.window_height))
+            pygame.display.flip()
+
+    
 
 if __name__ == "__main__":
     os.environ["SDL_VIDEO_WINDOW_POS"] = "50, 50"
