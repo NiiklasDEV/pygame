@@ -43,8 +43,13 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, filename):
         super().__init__()
         self.frame = 0
-        self.image = pygame.image.load(os.path.join(Settings.path_image, filename)).convert_alpha()
-        self.image = pygame.transform.scale(self.image, Settings.player_size)
+        self.index = 0
+        self.animation_list = []
+        for i in range(1):
+            self.image = pygame.image.load("C:/Users/nikbr/Documents/GitHub/pygame/Halbjahresprojekt/images/idle/1.png")
+            self.image = pygame.transform.scale(self.image, Settings.player_size)
+            self.animation_list.append(self.image)
+        self.image = self.animation_list[self.index]
         self.rect = self.image.get_rect()
         self.rect.left = 335 #x
         self.rect.top = 500 #y
@@ -54,6 +59,7 @@ class Player(pygame.sprite.Sprite):
         self.platform_y = 500
         self.velocity_index = 0
         self.velocity = ([-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5])
+        
 
     def moveRight(self):
         if self.rect.left < Settings.window_width - 50:
@@ -103,30 +109,6 @@ class Obstacle(pygame.sprite.Sprite):
         self.rect.left = 335 #x
         self.rect.top = 500 #y
         self.dirt_img = pygame.image.load(os.path.join(Settings.path_image, "ground.png")).convert_alpha()
-        self.tile_list = []
-
-    def platforms(self):
-        for p in range(game.maxplatforms):
-            p_w = random.randint(100,300)
-            p_x = random.randint(0, Settings.window_width - p_w)
-            p_y = p * random.randint(80,120)
-            platform = Obstacle(p_x,p_y,p_w)
-            self.platforms_group.add(platform)
-    
-    def spawnground(self):
-        row_count = 0
-        for row in Game.world_data:
-            col_count = 0
-            for tile in row:
-                if tile == 1:
-                    img = pygame.transform.scale(self.dirt_img, (Settings.tile_size, Settings.tile_size))
-                    img_rect = img.get_rect()
-                    img_rect.x = col_count * Settings.tile_size
-                    img_rect.y = row_count * Settings.tile_size
-                    tile = (img, img_rect)
-                    self.tile_list.append(tile)
-                col_count += 1
-            row_count += 1
 
 
     def update(self):
@@ -138,8 +120,6 @@ class Obstacle(pygame.sprite.Sprite):
 
     def draw(self, screen):
         screen.blit(self.platform.image, self.platform.rect)
-        for tile in self.tile_list:
-            screen.blit(tile[0], tile[1])
 
 class Game(object):
     def __init__(self) -> None:
@@ -209,7 +189,6 @@ class Game(object):
             self.draw()
             Obstacle.draw(self, self.screen)
             self.player.jump()
-            self.drawtiles()
         pygame.quit()       
 
 
@@ -241,12 +220,7 @@ class Game(object):
         self.player.draw(self.screen)
         self.platforms_group.draw(self.screen)
         pygame.display.flip()
-    
-    def drawtiles(self):
-        for line in range(0, 25):
-            pygame.draw.line(self.screen, (255, 255, 255), (0, line * Settings.tile_size), (Settings.window_width, line * Settings.tile_size))
-            pygame.draw.line(self.screen, (255, 255, 255), (line * Settings.tile_size, 0), (line * Settings.tile_size, Settings.window_height))
-            pygame.display.flip()
+
 
     
 
