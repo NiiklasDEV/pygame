@@ -44,14 +44,12 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         self.frame = 0
         self.index = 0
-        self.animation_list = []
-        for i in range(1):
-            self.image = pygame.image.load("C:/Users/nikbr/Documents/GitHub/pygame/Halbjahresprojekt/images/idle/1.png")
-            self.image = pygame.transform.scale(self.image, Settings.player_size)
-            self.animation_list.append(self.image)
-        self.image = self.animation_list[self.index]
+        self.anim = []
+        self.imgindex = 0
+        self.image = pygame.image.load(os.path.join(Settings.path_image, filename))
+        self.image = pygame.transform.scale(self.image, Settings.player_size)
         self.rect = self.image.get_rect()
-        self.rect.left = 335 #x
+        self.rect.left = 335 #
         self.rect.top = 500 #y
         self.speed_h = 0
         self.speed_v = 0
@@ -59,14 +57,30 @@ class Player(pygame.sprite.Sprite):
         self.platform_y = 500
         self.velocity_index = 0
         self.velocity = ([-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5])
-        
+        self.anim.append(os.path.join(Settings.path_image, "player.png"))
+        self.image = self.anim[self.imgindex]
+
+
+    def animation(self):
+        self.imgindex += 1
+        self.filename = f"{i}.png"
+        img = pygame.image.load(os.path.join(Settings.path_image, self.filename)).convert_alpha()
+        self.image_lg = pygame.transform.scale(img, Settings.player_size)
+
 
     def moveRight(self):
+        self.anim.clear()
         if self.rect.left < Settings.window_width - 50:
             self.rect.left = self.rect.left + 5
+            self.anim.append(self.image_lg)
+
+            
+
     def moveLeft(self):
         if self.rect.left > 0:
             self.rect.left = self.rect.left - 5 
+
+    #Funktion zum springen eines Sprites
     def jump(self):
         if self.jumping == True:
             self.rect.top += self.velocity[self.velocity_index]
@@ -187,8 +201,8 @@ class Game(object):
             self.watch_for_events()
             self.update()
             self.draw()
-            Obstacle.draw(self, self.screen)
             self.player.jump()
+            self.player.animation()
         pygame.quit()       
 
 
