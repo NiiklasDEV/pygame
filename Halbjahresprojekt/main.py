@@ -42,11 +42,12 @@ class Background(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self, filename):
         super().__init__()
-        self.frame = 0
-        self.index = 0
         self.anim = []
         self.imgindex = 0
-        self.image = pygame.image.load(os.path.join(Settings.path_image, filename))
+        self.frame = 0
+        self.index = 0
+        self.image = pygame.image.load(os.path.join(Settings.path_image, f"{self.imgindex}.png"))
+        print(self.imgindex)
         self.image = pygame.transform.scale(self.image, Settings.player_size)
         self.rect = self.image.get_rect()
         self.rect.left = 335 #
@@ -57,25 +58,27 @@ class Player(pygame.sprite.Sprite):
         self.platform_y = 500
         self.velocity_index = 0
         self.velocity = ([-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5])
-        self.anim.append(os.path.join(Settings.path_image, "player.png"))
-        self.image = self.anim[self.imgindex]
-
+        #Animation Area
+        self.anim.append(self.image)
+        self.sprite = self.anim[self.imgindex]
+        self.rect = self.image.get_rect()
+        ###    
 
     def animation(self):
         self.imgindex += 1
-        self.filename = f"{i}.png"
-        img = pygame.image.load(os.path.join(Settings.path_image, self.filename)).convert_alpha()
-        self.image_lg = pygame.transform.scale(img, Settings.player_size)
-
+        if self.imgindex >= len(self.anim):
+            self.imgindex = 0
+            
+        self.sprite = self.anim[self.imgindex]
 
     def moveRight(self):
-        self.anim.clear()
+        #self.anim.clear()
         if self.rect.left < Settings.window_width - 50:
             self.rect.left = self.rect.left + 5
-            self.anim.append(self.image_lg)
+            self.anim.append(self.image)
+            self.animation()
 
-            
-
+        
     def moveLeft(self):
         if self.rect.left > 0:
             self.rect.left = self.rect.left - 5 
