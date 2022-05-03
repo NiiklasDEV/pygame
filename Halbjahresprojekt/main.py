@@ -104,7 +104,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.move_ip((self.speed_h, self.speed_v))
 
     def draw(self, screen):
-        screen.blit(self.image, self.rect)
+        screen.blit(self.image,self.rect)
 
     def change_direction_h(self):
         self.speed_h *= -1
@@ -150,21 +150,6 @@ class Game(object):
         self.platform = Obstacle("platform.png")
         self.platforms_group = pygame.sprite.Group()
         self.running = True
-        self.maxplatforms = 5
-        self.world_data = [
-            [1,1,1,1,1,1],
-            [1,0,0,0,1],
-            [1,0,0,0,1],
-            [1,0,0,0,1],
-            [1,1,1,1,1],
-            ]
-        
-
-    def spawnplatform(self,num):
-        for count in range(num):
-            self.platforms = []
-            self.platforms.append(Obstacle("platform.png"))
-            self.platform.add(self.platforms)
 
     #Malt die Punkteanzeige
     #def drawpoints(self):
