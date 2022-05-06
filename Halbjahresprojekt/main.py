@@ -1,6 +1,8 @@
+from argparse import FileType
 from math import dist
 from platform import platform
 from typing import Text
+from xml.dom.expatbuilder import FilterVisibilityController
 import pygame
 import os
 from random import randint, random
@@ -35,7 +37,6 @@ class Background(pygame.sprite.Sprite):
     def draw(self, screen):
         screen.blit(self.image, self.rect)
         
-
     def update(self):
         pass
 
@@ -43,11 +44,13 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, filename):
         super().__init__()
         self.anim = []
+        for i in range(2):
+            bitmap = pygame.image.load(os.path.join(Settings.path_image, "idle.png"))
+            self.anim.append(bitmap)
         self.imgindex = 0
         self.frame = 0
         self.index = 0
-        self.image = pygame.image.load(os.path.join(Settings.path_image, f"{self.imgindex}.png"))
-        print(self.imgindex)
+        self.image = pygame.image.load(os.path.join(Settings.path_image, filename))
         self.image = pygame.transform.scale(self.image, Settings.player_size)
         self.rect = self.image.get_rect()
         self.rect.left = 335 #
@@ -57,27 +60,40 @@ class Player(pygame.sprite.Sprite):
         self.jumping = False
         self.platform_y = 500
         self.velocity_index = 0
+        self.clock_time = pygame.time.get_ticks()
         self.velocity = ([-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5])
+        self.animtime = 150
         #Animation Area
-        self.anim.append(self.image)
-        self.sprite = self.anim[self.imgindex]
-        self.rect = self.image.get_rect()
+        self.image = self.anim[self.imgindex]
         ###    
 
     def animation(self):
-        self.imgindex += 1
-        if self.imgindex >= len(self.anim):
-            self.imgindex = 0
-            
-        self.sprite = self.anim[self.imgindex]
+        #if self.imgindex >= len(self.anim):
+         #   self.imgindex = 0
+           #print(self.imgindex)
+        if pygame.time.get_ticks() > self.clock_time:
+            self.clock_time = pygame.time.get_ticks() + self.animtime
+            self.imgindex += 1
+            print(self.imgindex)
+            if self.imgindex >= len(self.anim):
+                self.imgindex = 0
+                print(self.imgindex)
+                self.image = self.anim[self.imgindex]
+
+    def idle_append(self):
+        self.anim.clear()
+        bitmap = pygame.image.load(os.path.join(Settings.path_image, "idle.png"))
+        self.anim.append(bitmap)
 
     def moveRight(self):
-        #self.anim.clear()
+        self.anim.clear()
         if self.rect.left < Settings.window_width - 50:
             self.rect.left = self.rect.left + 5
-            self.anim.append(self.image)
-            self.animation()
-
+            for i in range(2):
+                bitmap = pygame.image.load(os.path.join(Settings.path_image, f"walk_{i}.png"))
+                self.anim.append(bitmap)
+        else:
+            self.idle_append()
         
     def moveLeft(self):
         if self.rect.left > 0:
@@ -105,6 +121,7 @@ class Player(pygame.sprite.Sprite):
         if self.rect.top <= 0 or self.rect.bottom >= Settings.window_height:
             self.change_direction_v()
         self.rect.move_ip((self.speed_h, self.speed_v))
+        self.animation()
 
     def draw(self, screen):
         screen.blit(self.image,self.rect)
@@ -190,7 +207,6 @@ class Game(object):
             self.update()
             self.draw()
             self.player.jump()
-            self.player.animation()
         pygame.quit()       
 
 
@@ -212,10 +228,13 @@ class Game(object):
                 pass
             if event.type == pygame.QUIT:
                 self.running = False
+            if event.type == pygame.KEYUP:
+                self.player.idle_append()
 
     def update(self):
         self.player.update()
         self.keybindings()
+        
 
     def draw(self):
         self.background.draw(self.screen)
