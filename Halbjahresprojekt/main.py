@@ -5,7 +5,7 @@ from pickle import FALSE
 from platform import platform
 from re import S
 import traceback
-from typing import Text
+from typing import Text, final
 from xml.dom.expatbuilder import FilterVisibilityController
 import pygame
 import os
@@ -21,7 +21,8 @@ class Settings(object):
     path_file = os.path.dirname(os.path.abspath(__file__))
     path_image = os.path.join(path_file, "images")
     path_image_enemy = os.path.join(path_file, "enemy_images")
-    player_size = (50,75)
+    path_image_hotdog = os.path.join(path_file, "hotdog_images")
+    player_size = (75,75)
     platform_size = (100,100)
     pygame.font.init()
     tile_size = 75
@@ -52,23 +53,25 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, Settings.player_size)
         self.anim = []
         self.imgindex = 0
-        bitmap = pygame.image.load(os.path.join(Settings.path_image, "idle.png"))
-        self.anim.append(bitmap)
+        for i in range(4):
+            bitmap = pygame.image.load(os.path.join(Settings.path_image_hotdog, f"idle_{i}.png"))
+            final = pygame.transform.scale(bitmap, (Settings.player_size))
+            self.anim.append(final)
         self.image = self.anim[self.imgindex]
         self.rect = self.image.get_rect()
-        self.rect.left = 335 #
-        self.rect.top = 500 #y
+        self.rect.left = 335 #x
+        self.rect.top = 550 #y
         self.speed_h = 0
         self.speed_v = 0
         self.look_left = False
         self.look_right = True
         self.jumping = False
-        self.platform_y = 500
+        self.platform_y = 550
         self.velocity_index = 0
         self.clock_time = pygame.time.get_ticks()
         self.velocity = ([-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5])
         self.velocity_l = ([7.5,7,6.5,6,5.5,5,4.5,4,3.5,3,2.5,2,1.5,1,0.5,-0.5,-1,-1.5,-2,-2.5,-3,-3.5,-4,-4.5,-5,-5.5,-6,-6.5,-7,-7.5])
-        self.animtime = 150
+        self.animtime = 100
         #Animation Area
         ###    
 
@@ -86,13 +89,17 @@ class Player(pygame.sprite.Sprite):
     def idle_append(self):
         if self.look_left == True:
             self.anim.clear()
-            bitmap = pygame.image.load(os.path.join(Settings.path_image, "idle.png"))
-            transformed = pygame.transform.flip(bitmap, True, False)
-            self.anim.append(transformed)
+            for i in range(4):
+                bitmap = pygame.image.load(os.path.join(Settings.path_image_hotdog, f"idle_{i}.png"))
+                transformed = pygame.transform.flip(bitmap, True, False)
+                final = pygame.transform.scale(transformed, (Settings.player_size))
+                self.anim.append(final)
         elif self.look_left == False:
             self.anim.clear()
-            bitmap = pygame.image.load(os.path.join(Settings.path_image, "idle.png"))
-            self.anim.append(bitmap)
+            for i in range (4):
+                bitmap = pygame.image.load(os.path.join(Settings.path_image_hotdog, f"idle_{i}.png"))
+                final = pygame.transform.scale(bitmap, (Settings.player_size))
+                self.anim.append(final)
 
     def moveRight(self):
         self.look_right = True
@@ -101,8 +108,9 @@ class Player(pygame.sprite.Sprite):
         if self.rect.left < Settings.window_width - 50:
             self.rect.left = self.rect.left + 5
         for i in range(2):
-            bitmap = pygame.image.load(os.path.join(Settings.path_image, f"walk_{i}.png"))
-            self.anim.append(bitmap)
+            bitmap = pygame.image.load(os.path.join(Settings.path_image_hotdog, f"walk_{i}.png"))
+            final = pygame.transform.scale(bitmap, (Settings.player_size))
+            self.anim.append(final)
         
     def moveLeft(self):
         self.anim.clear()
@@ -112,9 +120,10 @@ class Player(pygame.sprite.Sprite):
             self.rect.left = self.rect.left - 5
             for i in range(2):
                 if self.look_left == True:
-                    bitmap = pygame.image.load(os.path.join(Settings.path_image, f"walk_{i}.png"))
+                    bitmap = pygame.image.load(os.path.join(Settings.path_image_hotdog, f"walk_{i}.png"))
                     transformed = pygame.transform.flip(bitmap, True, False)
-                    self.anim.append(transformed)
+                    final = pygame.transform.scale(transformed, (Settings.player_size))
+                    self.anim.append(final)
 
     #Funktion zum springen eines Sprites
     def jump(self):
@@ -124,17 +133,19 @@ class Player(pygame.sprite.Sprite):
             self.velocity_index = 0  
         if self.jumping == True and self.look_left == True:
             self.anim.clear()
-            bitmap = pygame.image.load(os.path.join(Settings.path_image, "jump.png"))
+            bitmap = pygame.image.load(os.path.join(Settings.path_image_hotdog, "jump.png"))
             transformed = pygame.transform.flip(bitmap, True, False)
-            self.anim.append(transformed)
+            final = pygame.transform.scale(transformed, (Settings.player_size))
+            self.anim.append(final)
             self.rect.top += self.velocity[self.velocity_index]
             self.velocity_index += 1
             if self.velocity_index >= len(self.velocity) -1:
                 self.velocity_index = len(self.velocity) - 1  
         elif self.jumping == True and self.look_right == True:
             self.anim.clear()
-            bitmap = pygame.image.load(os.path.join(Settings.path_image, "jump.png"))
-            self.anim.append(bitmap)
+            bitmap = pygame.image.load(os.path.join(Settings.path_image_hotdog, "jump.png"))
+            final = pygame.transform.scale(bitmap, (Settings.player_size))
+            self.anim.append(final)
             self.rect.top += self.velocity[self.velocity_index]
             self.velocity_index += 1
             if self.velocity_index >= len(self.velocity) -1:
@@ -173,13 +184,13 @@ class Enemy(pygame.sprite.Sprite):
         self.image = self.anim[self.imgindex]
         self.rect = self.image.get_rect()
         self.rect.left = Settings.window_width - 50 #x
-        self.rect.top = 500 #y
+        self.rect.top = 450 #y
         self.speed_h = 0
         self.speed_v = 0
         self.look_left = True
         self.look_right = False
         self.jumping = False
-        self.platform_y = 500
+        self.platform_y = 450
         self.velocity_index = 0
         self.clock_time = pygame.time.get_ticks()
         self.velocity = ([-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5])
@@ -352,7 +363,7 @@ class Game(object):
         while self.running:
             if self.pause == True:
                 self.pausescreen()
-            self.startmenu()
+            #self.startmenu()
             self.clock.tick(60)                     
             self.watch_for_events()
             self.update()
@@ -373,7 +384,7 @@ class Game(object):
         if control[pygame.K_ESCAPE]:
             self.pausescreen()
         if control[pygame.K_x]:
-            self.enemy.add(Enemy("enemy.png"))
+            self.enemy.add(Enemy("idle.png"))
  
     
     def watch_for_events(self):
@@ -396,9 +407,9 @@ class Game(object):
         self.background.draw(self.screen)
         self.player.draw(self.screen)
         self.enemy.draw(self.screen)
-        self.startbutton.draw(self.screen)
-        self.screen.blit(self.startbutton)
-        self.screen.blit(self.stopbutton,(200,200))
+        # self.startbutton.draw(self.screen)
+        # self.screen.blit(self.startbutton)
+        # self.screen.blit(self.stopbutton,(200,200))
         pygame.display.flip()
 
 
