@@ -12,6 +12,7 @@ class Settings(object):
     window_width = 1600
     path_file = os.path.dirname(os.path.abspath(__file__))
     path_image = os.path.join(path_file, "images")
+    path_sound = os.path.join(path_file, "sounds")
     path_image_enemy = os.path.join(path_image, "enemy_images")
     path_image_hotdog = os.path.join(path_image, "hotdog_images")
     player_size = (64,64)
