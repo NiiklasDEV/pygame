@@ -1,28 +1,21 @@
-from argparse import FileType
-from importlib.resources import path
 from math import dist
-from pickle import FALSE
-from platform import platform
-from re import S
-import traceback
-from typing import Text, final
-from xml.dom.expatbuilder import FilterVisibilityController
 import pygame
 import os
 from random import randint, random
-
+from level import Level
+from game_data import level_0
 from pygame import surface
 import pygame.mixer
-from pygame.constants import GL_MULTISAMPLEBUFFERS
 
 class Settings(object):
     window_height = 800
     window_width = 1600
     path_file = os.path.dirname(os.path.abspath(__file__))
     path_image = os.path.join(path_file, "images")
-    path_image_enemy = os.path.join(path_file, "enemy_images")
-    path_image_hotdog = os.path.join(path_file, "hotdog_images")
-    player_size = (75,75)
+    path_image_enemy = os.path.join(path_image, "enemy_images")
+    path_image_hotdog = os.path.join(path_image, "hotdog_images")
+    player_size = (64,64)
+    enemy_size = (64,64)
     platform_size = (100,100)
     pygame.font.init()
     tile_size = 75
@@ -32,6 +25,9 @@ class Settings(object):
     white = (255,255,255)
     black = (0,0,0)
     title = "Galaxy Jump"
+    vertical_tile_number = 25
+    tile_size = 32
+    screen_height = vertical_tile_number * tile_size
 
 class Background(pygame.sprite.Sprite):
     def __init__(self, filename) -> None:
@@ -176,11 +172,13 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self, filename):
         super().__init__()
         self.image = pygame.image.load(os.path.join(Settings.path_image_enemy, filename))
-        self.image = pygame.transform.scale(self.image, Settings.player_size)
+        self.image = pygame.transform.scale(self.image, (Settings.enemy_size))
         self.anim = []
         self.imgindex = 0
-        bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, "idle.png"))
-        self.anim.append(bitmap)
+        for i in range(4):
+            bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"idle_{i}.png"))
+            final = pygame.transform.scale(bitmap, (Settings.enemy_size))
+            self.anim.append(final)
         self.image = self.anim[self.imgindex]
         self.rect = self.image.get_rect()
         self.rect.left = Settings.window_width - 50 #x
@@ -214,11 +212,13 @@ class Enemy(pygame.sprite.Sprite):
             self.anim.clear()
             bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, "idle.png"))
             transformed = pygame.transform.flip(bitmap, True, False)
-            self.anim.append(transformed)
+            final = pygame.transform.scale(transformed, (Settings.player_size))
+            self.anim.append(final)
         elif self.look_left == False:
             self.anim.clear()
             bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, "idle.png"))
-            self.anim.append(bitmap)
+            final = pygame.transform.scale(bitmap, (Settings.enemy_size))
+            self.anim.append(final)
 
     def moveRight(self):
         self.look_right = True
@@ -228,7 +228,8 @@ class Enemy(pygame.sprite.Sprite):
         for i in range(2):
             if self.look_right == True:
                 bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"walk_{i}.png"))
-                self.anim.append(bitmap)
+                final = pygame.transform.scale(bitmap, (Settings.enemy_size))
+                self.anim.append(final)
         
     def moveLeft(self):
         self.look_right = False
@@ -239,7 +240,8 @@ class Enemy(pygame.sprite.Sprite):
             if self.look_left == True:
                 bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"walk_{i}.png"))
                 transformed = pygame.transform.flip(bitmap, True, False)
-                self.anim.append(transformed)
+                final = pygame.transform.scale(transformed, (Settings.enemy_size))
+                self.anim.append(final)
 
     #Funktion zum springen eines Sprites
     def jump(self):
@@ -295,6 +297,7 @@ class Game(object):
         self.points = 0
         self.lives = 3
         self.screen = pygame.display.set_mode((Settings.window_width, Settings.window_height))
+        self.level = Level(level_0,self.screen)
         pygame.display.set_caption(Settings.title)
         self.clock = pygame.time.Clock()
         self.background = Background("background03.png")
@@ -324,7 +327,7 @@ class Game(object):
             if e.rect.left <= 0:
                 e.look_left = False
                 e.look_right = True
-            if e.rect.right == Settings.window_width:
+            if e.rect.right == Settings.window_width - 50:
                 e.look_right = False
                 e.look_left = True
             if  e.look_left:
@@ -418,4 +421,5 @@ if __name__ == "__main__":
 
     game = Game()
     game.run()
+    game.level.run()
 
