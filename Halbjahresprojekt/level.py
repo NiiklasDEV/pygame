@@ -1,6 +1,7 @@
 import pygame
 from support import import_csv_layout
 #write an import statement that imports tile_size from the Settings class of main.py
+#Lässt sich nicht importieren bzw. gibt einen Fehler aus vielleicht das Attribut ändern oder ähnliches
 from main import Settings
 from tiles import Tile
 
