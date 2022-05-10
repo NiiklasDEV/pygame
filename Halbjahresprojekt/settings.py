@@ -2,8 +2,6 @@ import pygame
 import os
 
 class Settings(object):
-    window_height = 800
-    window_width = 1600
     path_file = os.path.dirname(os.path.abspath(__file__))
     path_image = os.path.join(path_file, "images")
     path_sound = os.path.join(path_file, "sounds")
@@ -21,6 +19,7 @@ class Settings(object):
     white = (255,255,255)
     black = (0,0,0)
     title = "Galaxy Jump"
-    vertical_tile_number = 25
+    vertical_tile_number = 11
     tile_size = 32
-    screen_height = vertical_tile_number * tile_size
+    window_height = vertical_tile_number * tile_size
+    window_width = 1200

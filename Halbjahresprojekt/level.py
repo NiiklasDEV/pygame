@@ -1,7 +1,5 @@
 import pygame
 from support import import_csv_layout
-#write an import statement that imports tile_size from the Settings class of main.py
-#Lässt sich nicht importieren bzw. gibt einen Fehler aus vielleicht das Attribut ändern oder ähnliches
 from settings import tile_size
 from tiles import Tile
 
@@ -13,7 +11,7 @@ class Level():
         self.terrain_sprites = self.create_tile_group(terrain_layout, "terrain")
     
     def create_tile_group(self,layout,type):
-        sprite_group = pygame.sprite.Group()
+        self.sprite_group = pygame.sprite.Group()
 
         for row_index, row in enumerate(layout):
             for col_index,val in enumerate(row):
@@ -23,11 +21,12 @@ class Level():
 
                     if type == 'terrain':
                         sprite = Tile(tile_size,x,y)
-                        sprite_group.add(sprite)
+                        self.sprite_group.add(sprite)
 
 
-        return sprite_group
+        return self.sprite_group
 
     def run(self):
         self.terrain_sprites.draw(self.display_surface)
-        self.terrain_sprites.update(5)
+        #Updaten das es rechts moved + 1
+        self.sprite_group.update(1)
