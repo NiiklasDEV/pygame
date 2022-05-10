@@ -2,7 +2,7 @@ import pygame
 from support import import_csv_layout
 #write an import statement that imports tile_size from the Settings class of main.py
 #Lässt sich nicht importieren bzw. gibt einen Fehler aus vielleicht das Attribut ändern oder ähnliches
-from main import Settings
+from settings import tile_size
 from tiles import Tile
 
 class Level():
@@ -18,16 +18,16 @@ class Level():
         for row_index, row in enumerate(layout):
             for col_index,val in enumerate(row):
                 if val != "-1":
-                    x = col_index * Settings.tile_size
-                    y = row_index * Settings.tile_size
+                    x = col_index * tile_size
+                    y = row_index * tile_size
 
                     if type == 'terrain':
-                        sprite = Tile(Settings.tile_size,x,y)
+                        sprite = Tile(tile_size,x,y)
                         sprite_group.add(sprite)
 
 
         return sprite_group
 
     def run(self):
-        #running the level
-        pass
+        self.terrain_sprites.draw(self.display_surface)
+        self.terrain_sprites.update(5)
