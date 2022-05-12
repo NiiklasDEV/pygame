@@ -22,26 +22,27 @@ class Background(pygame.sprite.Sprite):
         pass
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, filename):
+    def __init__(self, filename, game):
         super().__init__()
+        self.game = game
         self.image = pygame.image.load(os.path.join(Settings.path_image, filename))
         self.image = pygame.transform.scale(self.image, Settings.player_size)
         self.anim = []
         self.imgindex = 0
         for i in range(4):
-            bitmap = pygame.image.load(os.path.join(Settings.path_image_hotdog, f"idle_{i}.png"))
+            bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"idle_{i}.png"))
             final = pygame.transform.scale(bitmap, (Settings.player_size))
             self.anim.append(final)
         self.image = self.anim[self.imgindex]
         self.rect = self.image.get_rect()
-        self.rect.left = 335 #x
-        self.rect.top = 550 #y
+        self.rect.left = 10 #x
+        self.rect.top = 820 #y
         self.speed_h = 0
         self.speed_v = 0
         self.look_left = False
         self.look_right = True
         self.jumping = False
-        self.platform_y = 550
+        self.platform_y = 290
         self.velocity_index = 0
         self.clock_time = pygame.time.get_ticks()
         self.velocity = ([-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5])
@@ -54,25 +55,22 @@ class Player(pygame.sprite.Sprite):
         if pygame.time.get_ticks() > self.clock_time:
             self.clock_time = pygame.time.get_ticks() + self.animtime
             self.imgindex += 1
-            # print(self.imgindex)
-            # print(self.anim)
             if self.imgindex >= len(self.anim):
                 self.imgindex = 0
-                #print(self.imgindex)
             self.image = self.anim[self.imgindex]
 
     def idle_append(self):
         if self.look_left == True:
             self.anim.clear()
             for i in range(4):
-                bitmap = pygame.image.load(os.path.join(Settings.path_image_hotdog, f"idle_{i}.png"))
+                bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"idle_{i}.png"))
                 transformed = pygame.transform.flip(bitmap, True, False)
                 final = pygame.transform.scale(transformed, (Settings.player_size))
                 self.anim.append(final)
         elif self.look_left == False:
             self.anim.clear()
             for i in range (4):
-                bitmap = pygame.image.load(os.path.join(Settings.path_image_hotdog, f"idle_{i}.png"))
+                bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"idle_{i}.png"))
                 final = pygame.transform.scale(bitmap, (Settings.player_size))
                 self.anim.append(final)
 
@@ -81,9 +79,10 @@ class Player(pygame.sprite.Sprite):
         self.look_left = False
         self.anim.clear()
         if self.rect.left < Settings.window_width - 50:
-            self.rect.left = self.rect.left + 5
+            #self.rect.left = self.rect.left + 5
+            self.game.scrolling_offset[0] += 5
         for i in range(2):
-            bitmap = pygame.image.load(os.path.join(Settings.path_image_hotdog, f"walk_{i}.png"))
+            bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"walk_{i}.png"))
             final = pygame.transform.scale(bitmap, (Settings.player_size))
             self.anim.append(final)
         
@@ -92,10 +91,11 @@ class Player(pygame.sprite.Sprite):
         self.look_right = False
         self.look_left = True
         if self.rect.left >= 0:
-            self.rect.left = self.rect.left - 5
+            #self.rect.left = self.rect.left - 5
+            self.game.scrolling_offset[0] -= 5
             for i in range(2):
                 if self.look_left == True:
-                    bitmap = pygame.image.load(os.path.join(Settings.path_image_hotdog, f"walk_{i}.png"))
+                    bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"walk_{i}.png"))
                     transformed = pygame.transform.flip(bitmap, True, False)
                     final = pygame.transform.scale(transformed, (Settings.player_size))
                     self.anim.append(final)
@@ -108,7 +108,7 @@ class Player(pygame.sprite.Sprite):
             self.velocity_index = 0  
         if self.jumping == True and self.look_left == True:
             self.anim.clear()
-            bitmap = pygame.image.load(os.path.join(Settings.path_image_hotdog, "jump.png"))
+            bitmap = pygame.image.load(os.path.join(Settings.path_image_player, "jump.png"))
             transformed = pygame.transform.flip(bitmap, True, False)
             final = pygame.transform.scale(transformed, (Settings.player_size))
             self.anim.append(final)
@@ -118,7 +118,7 @@ class Player(pygame.sprite.Sprite):
                 self.velocity_index = len(self.velocity) - 1  
         elif self.jumping == True and self.look_right == True:
             self.anim.clear()
-            bitmap = pygame.image.load(os.path.join(Settings.path_image_hotdog, "jump.png"))
+            bitmap = pygame.image.load(os.path.join(Settings.path_image_player, "jump.png"))
             final = pygame.transform.scale(bitmap, (Settings.player_size))
             self.anim.append(final)
             self.rect.top += self.velocity[self.velocity_index]
@@ -138,8 +138,8 @@ class Player(pygame.sprite.Sprite):
         self.rect.move_ip((self.speed_h, self.speed_v))
         self.animation()
 
-    def draw(self, screen):
-        screen.blit(self.image,self.rect)
+    def draw(self, screen, scrolling_offset):
+            screen.blit(self.image ,(self.rect.left + scrolling_offset[0], self.rect.top + scrolling_offset[1]))
 
     def change_direction_h(self):
         self.speed_h *= -1
@@ -173,15 +173,12 @@ class Enemy(pygame.sprite.Sprite):
         self.velocity = ([-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5])
         self.velocity_l = ([7.5,7,6.5,6,5.5,5,4.5,4,3.5,3,2.5,2,1.5,1,0.5,-0.5,-1,-1.5,-2,-2.5,-3,-3.5,-4,-4.5,-5,-5.5,-6,-6.5,-7,-7.5])
         self.animtime = 150
-        #Animation Area
-        ###    
+
 
     def animation(self):
         if pygame.time.get_ticks() > self.clock_time:
             self.clock_time = pygame.time.get_ticks() + self.animtime
             self.imgindex += 1
-            print(self.imgindex)
-            #print(self.anim)
             if self.imgindex >= len(self.anim):
                 self.imgindex = 0
             self.image = self.anim[self.imgindex]
@@ -203,7 +200,7 @@ class Enemy(pygame.sprite.Sprite):
         self.look_right = True
         self.look_left = False
         self.anim.clear()
-        self.rect.left = self.rect.left + 3
+        self.rect.left = self.rect.left + 1
         for i in range(2):
             if self.look_right == True:
                 bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"walk_{i}.png"))
@@ -214,7 +211,7 @@ class Enemy(pygame.sprite.Sprite):
         self.look_right = False
         self.look_left = True
         self.anim.clear()
-        self.rect.left = self.rect.left - 3
+        self.rect.left = self.rect.left - 1
         for i in range(2):
             if self.look_left == True:
                 bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"walk_{i}.png"))
@@ -275,12 +272,13 @@ class Game(object):
         self.startmenue = True
         self.points = 0
         self.lives = 3
+        self.scrolling_offset = [0,0]
         self.screen = pygame.display.set_mode((Settings.window_width, Settings.window_height))
-        self.level = Level(level_0,self.screen)
+        self.level = Level(level_0,self.screen,self)
         pygame.display.set_caption(Settings.title)
         self.clock = pygame.time.Clock()
         self.background = Background("background03.png")
-        self.player = Player("player.png")
+        self.player = Player("player.png", self)
         self.enemy = pygame.sprite.Group()
         self.running = True
         self.startbutton = pygame.image.load(os.path.join(Settings.path_image, "start.png"))
@@ -289,6 +287,7 @@ class Game(object):
         self.stoptrect = self.stopbutton.get_rect()
         self.creditssbutton = pygame.image.load(os.path.join(Settings.path_image, "credits.png"))
         self.creditsrect = self.creditssbutton.get_rect()
+
 
     #Malt die Punkteanzeige
     #def drawpoints(self):
@@ -388,7 +387,7 @@ class Game(object):
 
     def draw(self):
         #self.background.draw(self.screen)
-        self.player.draw(self.screen)
+        self.player.draw(self.screen, self.scrolling_offset)
         self.enemy.draw(self.screen)
         # self.startbutton.draw(self.screen)
         # self.screen.blit(self.startbutton)
@@ -397,9 +396,8 @@ class Game(object):
 
 
 if __name__ == "__main__":
-    os.environ["SDL_VIDEO_WINDOW_POS"] = "50, 50"
+    os.environ["SDL_VIDEO_WINDOW_POS"] = "350, 350"
 
     game = Game()
     game.run()
-    game.level.run()
 
