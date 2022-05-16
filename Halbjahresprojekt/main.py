@@ -1,3 +1,4 @@
+from http.client import MOVED_PERMANENTLY
 from math import dist
 import pygame
 import os
@@ -36,20 +37,58 @@ class Player(pygame.sprite.Sprite):
         self.image = self.anim[self.imgindex]
         self.rect = self.image.get_rect()
         self.rect.left = 10 #x
-        self.rect.top = 820 #y
+        self.rect.top = 800 #y
         self.speed_h = 0
+        self.player_y_momentum = 0
         self.speed_v = 0
         self.look_left = False
         self.look_right = True
         self.jumping = False
-        self.platform_y = 290
+        self.platform_y = 275
         self.velocity_index = 0
         self.clock_time = pygame.time.get_ticks()
         self.velocity = ([-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5])
         self.velocity_l = ([7.5,7,6.5,6,5.5,5,4.5,4,3.5,3,2.5,2,1.5,1,0.5,-0.5,-1,-1.5,-2,-2.5,-3,-3.5,-4,-4.5,-5,-5.5,-6,-6.5,-7,-7.5])
         self.animtime = 100
-        #Animation Area
-        ###    
+
+
+    def movement(self,rect, movement, tiles):
+        collision_type = {'top': False, 'bottom': False, 'right': False, 'left': False}
+        self.rect.x += movement[0] 
+        hit_list = Game.tile_collision(self,rect,tiles)
+        for tile in hit_list:
+            #Überprüfung ob rechts läuft
+            if movement[0] > 0:
+                self.rect = tile.left
+                collision_type['right'] = True
+                #Überprüfung ob links läuft
+            elif movement[0] < 0:
+                self.rect = tile.right
+                collision_type['left'] = True
+        self.rect.y += movement[1]
+        hit_list = Game.tile_collision(self,rect,tiles)
+        for tile in hit_list:
+            #Überprüfung ob mit Boden berührt (Y Achse)
+            if movement[1] > 0:
+                self.rect = tile.top
+                collision_type['bottom'] = True
+            elif movement[1] < 0:
+                self.rect = tile.bottom
+                collision_type['top'] = True
+        return rect, collision_type
+
+    def moving(self):
+        self.player_y_momentum += 0.2
+        self.player_movement = [0,0]
+        if Player.moveRight:
+            self.player_movement[0] += 2
+        if Player.moveLeft:
+            self.player_movement[0] -= 2
+        self.player_movement[1] += self.player_y_momentum
+        if self.player_y_momentum > 3:
+            self.player_y_momentum = 3
+
+        self.player_rect, self.collisions = self.movement(self.rect, self.player_movement, Level.terrain_sprites)
 
     def animation(self):
         if pygame.time.get_ticks() > self.clock_time:
@@ -102,6 +141,7 @@ class Player(pygame.sprite.Sprite):
 
     #Funktion zum springen eines Sprites
     def jump(self):
+        #Legt das springen so fest das er nur auf der angelegten platform_y höhe bleiben kann
         if self.rect.top > self.platform_y: 
             self.rect.top = self.platform_y
             self.jumping = False
@@ -139,7 +179,9 @@ class Player(pygame.sprite.Sprite):
         self.animation()
 
     def draw(self, screen, scrolling_offset):
-            screen.blit(self.image ,(self.rect.left + scrolling_offset[0], self.rect.top + scrolling_offset[1]))
+        #Malen der Spielerpositionen jeweils nach Bewegung
+            #screen.blit(self.image ,(self.rect.left + scrolling_offset[0], self.rect.top + scrolling_offset[1]))
+            screen.blit(self.image, (self.rect.x, self.rect.y))
 
     def change_direction_h(self):
         self.speed_h *= -1
@@ -299,6 +341,14 @@ class Game(object):
     #    livetext = Settings.font.render(f"Lives: {self.lives}", False, (Settings.white))
     #    self.screen.blit(livetext,(14,50))
     #    pygame.display.flip()
+    
+    def tile_collision(self, rect, tiles):
+        hit_list = []
+        for tile in tiles:
+            if rect.colliderect(tile):
+                hit_list.append()
+        return hit_list
+
 
     def aimove(self):
         for e in self.enemy:
@@ -358,9 +408,9 @@ class Game(object):
     def keybindings(self):
         control = pygame.key.get_pressed()
         if control[pygame.K_d]:
-            self.player.moveRight()
+            self.player.moving()
         if control[pygame.K_a]:
-            self.player.moveLeft()
+            self.player.moving()
         if control[pygame.K_SPACE]:
             self.player.jumping = True
         if control[pygame.K_ESCAPE]:

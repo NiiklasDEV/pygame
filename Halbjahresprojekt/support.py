@@ -3,6 +3,7 @@ import pygame
 from csv import reader
 from settings import tile_size
 
+#Funktion liest jede Spalte der csv Datei ein und hängt sie als liste an row an + speichert sie in terrain_map
 def import_csv_layout(path):
     terrain_map = []
     with open(path) as map:
@@ -11,6 +12,7 @@ def import_csv_layout(path):
                 terrain_map.append(list(row))
         return terrain_map
 
+#Schneidet die Grafik passend aus dem Tileset und ordnet sie nach col * tile_size Verfahren an
 def import_cut_graphic(path):
     surface = pygame.image.load(path).convert_alpha()
     tile_num_x = int(surface.get_size()[0] / tile_size)

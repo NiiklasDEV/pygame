@@ -17,15 +17,18 @@ class Level():
         self.backround_sprites = self.create_tile_group(background_layout, "bg")
         self.ground_sprites = self.create_tile_group(ground_layout, "ground")
     
+    #Funktion zum erstellen der sprite Group für die jeweiligen Tiles
     def create_tile_group(self,layout,type):
         self.sprite_group = pygame.sprite.Group()
 
+        #Loopt durch alle Spalten und zeilen in der CSV und multipliziert die index mit der Tile größe [0,0] * tile_size
         for row_index,row in enumerate(layout):
             for col_index,val in enumerate(row):
                 if val != "-1":
                     x = col_index * tile_size
                     y = row_index * tile_size
 
+                    #Types mit den jeweiligen Sprites
                     if type == 'terrain':
                         terrain_tile_list = import_cut_graphic("C:/Users/nikbr/Desktop/MoonCaves1BTileset/caves_1b_tileset_compact.png")
                         tile_surface = terrain_tile_list[int(val)]
