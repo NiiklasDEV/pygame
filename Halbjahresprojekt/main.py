@@ -47,11 +47,11 @@ class Player(pygame.sprite.Sprite):
         self.look_left = False
         self.look_right = True
         self.jumping = False
-        self.platform_y = 275
+        self.platform_y = 273
         self.velocity_index = 0
         self.clock_time = pygame.time.get_ticks()
-        self.velocity = ([-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5])
-        self.velocity_l = ([7.5,7,6.5,6,5.5,5,4.5,4,3.5,3,2.5,2,1.5,1,0.5,-0.5,-1,-1.5,-2,-2.5,-3,-3.5,-4,-4.5,-5,-5.5,-6,-6.5,-7,-7.5])
+        self.velocity = ([-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10])
+        self.velocity_l = ([7.5,7,6.5,6,5.5,5,4.5,4,3.5,3,2.5,2,1.5,1,0.5,-0.5,-1,-1.5,-2,-2.5,-3,-3.5,-4,-4.5,-5,-5.5,-6,-6.5,-7,-7.5,-8,-8.5,-9,-9.5,-10])
         self.animtime = 100
 
     #Überprüft auf Kollision mit Gegner
@@ -68,36 +68,36 @@ class Player(pygame.sprite.Sprite):
         for tile in hit_list:
             #Überprüfung ob rechts läuft
             if movement[0] > 0:
-                self.rect = tile.left
+                self.rect.right = tile.rect.left
                 collision_type['right'] = True
-                #Überprüfung ob links läuft
+                #Überprüfung ob links läuft 
             elif movement[0] < 0:
-                self.rect = tile.right
+                self.rect.left= tile.rect.left
                 collision_type['left'] = True
         self.rect.y += movement[1]
         hit_list = Game.tile_collision(self,rect,tiles)
         for tile in hit_list:
             #Überprüfung ob mit Boden berührt (Y Achse)
             if movement[1] > 0:
-                self.rect = tile.top
+                self.rect.top = tile.rect.bottom
                 collision_type['bottom'] = True
             elif movement[1] < 0:
-                self.rect = tile.bottom
+                self.rect.bottom = tile.rect.top
                 collision_type['top'] = True
         return rect, collision_type
 
-    def moving(self):
+    def moving(self, direction):
         self.player_y_momentum += 0.2
         self.player_movement = [0,0]
-        if Player.moveRight:
+        if direction == "right":
             self.player_movement[0] += 2
-        if Player.moveLeft:
+        if direction == "left":
             self.player_movement[0] -= 2
         self.player_movement[1] += self.player_y_momentum
         if self.player_y_momentum > 3:
             self.player_y_momentum = 3
 
-        self.player_rect, self.collisions = self.movement(self.rect, self.player_movement, Level.terrain_sprites)
+        self.player_rect, self.collisions = self.movement(self.rect, self.player_movement, self.game.level.terrain_sprites)
 
     def animation(self):
         if pygame.time.get_ticks() > self.clock_time:
@@ -122,31 +122,31 @@ class Player(pygame.sprite.Sprite):
                 final = pygame.transform.scale(bitmap, (Settings.player_size))
                 self.anim.append(final)
 
-    def moveRight(self):
-        self.look_right = True
-        self.look_left = False
-        self.anim.clear()
-        if self.rect.left < Settings.window_width - 50:
-            #self.rect.left = self.rect.left + 5
-            self.game.scrolling_offset[0] += 5
-        for i in range(2):
-            bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"walk_{i}.png"))
-            final = pygame.transform.scale(bitmap, (Settings.player_size))
-            self.anim.append(final)
+    # def moveRight(self):
+    #     self.look_right = True
+    #     self.look_left = False
+    #     self.anim.clear()
+    #     if self.rect.left < Settings.window_width - 50:
+    #         #self.rect.left = self.rect.left + 5
+    #         self.game.scrolling_offset[0] += 5
+    #     for i in range(2):
+    #         bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"walk_{i}.png"))
+    #         final = pygame.transform.scale(bitmap, (Settings.player_size))
+    #         self.anim.append(final)
         
-    def moveLeft(self):
-        self.anim.clear()
-        self.look_right = False
-        self.look_left = True
-        if self.rect.left >= 0:
-            #self.rect.left = self.rect.left - 5
-            self.game.scrolling_offset[0] -= 5
-            for i in range(2):
-                if self.look_left == True:
-                    bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"walk_{i}.png"))
-                    transformed = pygame.transform.flip(bitmap, True, False)
-                    final = pygame.transform.scale(transformed, (Settings.player_size))
-                    self.anim.append(final)
+    # def moveLeft(self):
+    #     self.anim.clear()
+    #     self.look_right = False
+    #     self.look_left = True
+    #     if self.rect.left >= 0:
+    #         #self.rect.left = self.rect.left - 5
+    #         self.game.scrolling_offset[0] -= 5
+    #         for i in range(2):
+    #             if self.look_left == True:
+    #                 bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"walk_{i}.png"))
+    #                 transformed = pygame.transform.flip(bitmap, True, False)
+    #                 final = pygame.transform.scale(transformed, (Settings.player_size))
+    #                 self.anim.append(final)
 
     #Funktion zum springen eines Sprites
     def jump(self):
@@ -187,7 +187,7 @@ class Player(pygame.sprite.Sprite):
             self.change_direction_h()
         if self.rect.top <= 0 or self.rect.bottom >= Settings.window_height:
             self.change_direction_v()
-        self.rect.move_ip((self.speed_h, self.speed_v))
+        #self.rect.move_ip((self.speed_h, self.speed_v))
         self.animation()
         # if self.curhealth <= 0:
         #     Player.respawn(self)
@@ -349,10 +349,10 @@ class Game(object):
 
 
     #Malt die Punkteanzeige
-    def drawpoints(self):
-        pointtext = Settings.font.render(f"Points: {self.points}", False, (Settings.white))
-        self.screen.blit(pointtext,(300,500))
-        pygame.display.flip()
+    # def drawpoints(self):
+    #     pointtext = Settings.font.render(f"Points: {self.points}", False, (Settings.white))
+    #     self.screen.blit(pointtext,(300,500))
+    #     pygame.display.flip()
         #Malt die Lebensanzeige
     # def drawlives(self):
     #     pygame.draw.rect(self.screen,Settings.white,(10,10,Player.curhealth/self.health_ratio,25))
@@ -376,7 +376,7 @@ class Game(object):
         hit_list = []
         for tile in tiles:
             if rect.colliderect(tile):
-                hit_list.append()
+                hit_list.append(tile)
         return hit_list
 
 
@@ -463,9 +463,9 @@ class Game(object):
     def keybindings(self):
         control = pygame.key.get_pressed()
         if control[pygame.K_d]:
-            self.player.moving()
+            self.player.moving("right")
         if control[pygame.K_a]:
-            self.player.moving()
+            self.player.moving("left")
         if control[pygame.K_SPACE]:
             self.player.jumping = True
         if control[pygame.K_ESCAPE]:
