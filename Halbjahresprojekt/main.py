@@ -1,3 +1,4 @@
+from cmath import rect
 from http.client import MOVED_PERMANENTLY
 from math import dist
 import pygame
@@ -26,9 +27,11 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, filename, game):
         super().__init__()
         self.game = game
+        self.curhealth = 100
         self.image = pygame.image.load(os.path.join(Settings.path_image, filename))
         self.image = pygame.transform.scale(self.image, Settings.player_size)
         self.anim = []
+        self.dead = False
         self.imgindex = 0
         for i in range(4):
             bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"idle_{i}.png"))
@@ -51,6 +54,12 @@ class Player(pygame.sprite.Sprite):
         self.velocity_l = ([7.5,7,6.5,6,5.5,5,4.5,4,3.5,3,2.5,2,1.5,1,0.5,-0.5,-1,-1.5,-2,-2.5,-3,-3.5,-4,-4.5,-5,-5.5,-6,-6.5,-7,-7.5])
         self.animtime = 100
 
+    #Überprüft auf Kollision mit Gegner
+    def enemy_collision(self):
+        if pygame.sprite.collide_mask(self.player_rect,Enemy.rect):
+            Game.damage(50)
+            if self.curhealth <= 0:
+                self.die()
 
     def movement(self,rect, movement, tiles):
         collision_type = {'top': False, 'bottom': False, 'right': False, 'left': False}
@@ -166,9 +175,12 @@ class Player(pygame.sprite.Sprite):
             if self.velocity_index >= len(self.velocity) -1:
                 self.velocity_index = len(self.velocity) - 1                 
 
-    def respawn(self):
-        Player.rect.left = 335
-        Player.rect.top = 500
+    # def respawn(self):
+    #     self.curhealth = 100
+    #     Game.points = 0
+    #     Game.deathscreen(self)
+    #     self.rect.left = 335
+    #     self.rect.top = 500
 
     def update(self):
         if self.rect.left <= 0 or self.rect.right >= Settings.window_width:
@@ -177,6 +189,8 @@ class Player(pygame.sprite.Sprite):
             self.change_direction_v()
         self.rect.move_ip((self.speed_h, self.speed_v))
         self.animation()
+        # if self.curhealth <= 0:
+        #     Player.respawn(self)
 
     def draw(self, screen, scrolling_offset):
         #Malen der Spielerpositionen jeweils nach Bewegung
@@ -310,10 +324,13 @@ class Game(object):
     def __init__(self) -> None:
         super().__init__()
         pygame.init()
+        self.dead = False
         self.pause = False
         self.startmenue = True
         self.points = 0
-        self.lives = 3
+        self.maxhealth = 1000
+        self.health_length = 1000
+        self.health_ratio = self.maxhealth / self.health_length
         self.scrolling_offset = [0,0]
         self.screen = pygame.display.set_mode((Settings.window_width, Settings.window_height))
         self.level = Level(level_0,self.screen,self)
@@ -332,16 +349,29 @@ class Game(object):
 
 
     #Malt die Punkteanzeige
-    #def drawpoints(self):
-    #    pointtext = Settings.font.render(f"Points: {self.points}", False, (Settings.white))
-    #    self.screen.blit(pointtext,(300,500))
-    #    pygame.display.flip()
+    def drawpoints(self):
+        pointtext = Settings.font.render(f"Points: {self.points}", False, (Settings.white))
+        self.screen.blit(pointtext,(300,500))
+        pygame.display.flip()
         #Malt die Lebensanzeige
-    #def drawlives(self):
-    #    livetext = Settings.font.render(f"Lives: {self.lives}", False, (Settings.white))
-    #    self.screen.blit(livetext,(14,50))
-    #    pygame.display.flip()
+    # def drawlives(self):
+    #     pygame.draw.rect(self.screen,Settings.white,(10,10,Player.curhealth/self.health_ratio,25))
+    #     pygame.display.flip()
     
+    
+    def damage(self, amount):
+        if self.curhealth > 0:
+            self.curhealth -= amount
+        if self.curhealth <= 0:
+            # Methode Die noch implementieren
+            self.curhealth = 0
+
+    def health(self, amount):
+        if self.curhealth < self.maxhealth:
+            self.curhealth += amount
+        if self.curhealth >= self.maxhealth:
+            self.curhealth = self.maxhealth
+
     def tile_collision(self, rect, tiles):
         hit_list = []
         for tile in tiles:
@@ -378,6 +408,29 @@ class Game(object):
                         pause = False
             pygame.display.flip()
 
+    # def deathscreen(self):
+    #     self.dead = True
+    #     while self.dead:
+    #         Game.screen.fill(Settings.black)
+    #         pause_text = Settings.font.render("Tot", False, (Settings.white))
+    #         Game.screen.blit(pause_text,(Settings.window_width/2 - 50, Settings.window_height/2 - 50))
+    #         for event in pygame.event.get():
+    #             if event.type == pygame.QUIT:
+    #                 pygame.quit()
+    #                 quit()
+    #             if event.type == pygame.KEYDOWN:
+    #                 if event.key == pygame.K_SPACE:
+    #                     Player.dead = False
+    #                     Player.respawn()
+
+    #         pygame.display.flip()
+
+    # #Funktion zum zurücksetzen des Punktestandes und der Leben
+    # def die(self):
+    #     Player.curhealth = 100
+    #     self.points = 0
+    #     deathscreen
+
     def startmenu(self):
         self.startmenue = True
         while self.startmenue:
@@ -392,6 +445,8 @@ class Game(object):
             
     def run(self):
         while self.running:
+            if self.dead:
+                self.deathscreen()
             if self.pause == True:
                 self.pausescreen()
             #self.startmenu()
@@ -439,6 +494,7 @@ class Game(object):
         #self.background.draw(self.screen)
         self.player.draw(self.screen, self.scrolling_offset)
         self.enemy.draw(self.screen)
+        #self.drawlives()
         # self.startbutton.draw(self.screen)
         # self.screen.blit(self.startbutton)
         # self.screen.blit(self.stopbutton,(200,200))
