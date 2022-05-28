@@ -1,5 +1,6 @@
 from cmath import rect
 from http.client import MOVED_PERMANENTLY
+from importlib.resources import path
 from math import dist
 from tkinter import Canvas
 import pygame
@@ -121,6 +122,7 @@ class Player(pygame.sprite.Sprite):
         self.player_movement = [0,0]
         if direction == "right":
             for i in range(2):
+                self.look_left = True
                 if self.look_right == True:
                     bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"walk_{i}.png"))
                     final = pygame.transform.scale(bitmap, (Settings.player_size))
@@ -138,9 +140,10 @@ class Player(pygame.sprite.Sprite):
                     final = pygame.transform.scale(transformed, (Settings.player_size))
                     self.anim.append(final)
             self.idle_append()
+        if direction == "jump":
+            self.jumping = True
         self.player_movement[1] += self.player_y_momentum
         self.player_y_momentum += 0.2
-        print(self.player_y_momentum)
         if self.player_y_momentum > 3:
             self.player_y_momentum = 3
 
@@ -172,10 +175,8 @@ class Player(pygame.sprite.Sprite):
         #Legt das springen so fest das er nur auf der angelegten platform_y höhe bleiben kann
         if self.rect.top > self.platform_y: 
             self.rect.top = self.platform_y
-            #self.jumping = False
+            self.jumping = False
             self.velocity_index = 0  
-        if self.jumping == True:
-            self.moving("jump")
         # elif self.jumping == True and self.look_right == True:
         #     self.anim.clear()
         #     bitmap = pygame.image.load(os.path.join(Settings.path_image_player, "jump.png"))
@@ -217,30 +218,116 @@ class Player(pygame.sprite.Sprite):
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, filename):
         super().__init__()
+        self.curhealth = 50
         self.image = pygame.image.load(os.path.join(Settings.path_image_enemy, filename))
-        self.image = pygame.transform.scale(self.image, (Settings.enemy_size))
+        self.image = pygame.transform.scale(self.image, Settings.player_size)
         self.anim = []
+        self.dead = False
         self.imgindex = 0
-        for i in range(4):
-            bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"idle_{i}.png"))
-            final = pygame.transform.scale(bitmap, (Settings.enemy_size))
-            self.anim.append(final)
+        bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, "idle.png"))
+        final = pygame.transform.scale(bitmap, (Settings.player_size))
+        self.anim.append(final)
         self.image = self.anim[self.imgindex]
         self.rect = self.image.get_rect()
-        self.rect.left = Settings.window_width - 50 #x
-        self.rect.top = 450 #y
+        self.rect.left = 10 #x
+        self.rect.top = 800 #y
         self.speed_h = 0
+        self.player_y_momentum = 0
         self.speed_v = 0
-        self.look_left = True
-        self.look_right = False
+        self.look_left = False
+        self.look_right = True
         self.jumping = False
-        self.platform_y = 250
+        self.platform_y = 270
         self.velocity_index = 0
         self.clock_time = pygame.time.get_ticks()
-        self.velocity = ([-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5])
-        self.velocity_l = ([7.5,7,6.5,6,5.5,5,4.5,4,3.5,3,2.5,2,1.5,1,0.5,-0.5,-1,-1.5,-2,-2.5,-3,-3.5,-4,-4.5,-5,-5.5,-6,-6.5,-7,-7.5])
-        self.animtime = 150
+        self.velocity = ([-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10])
+        self.velocity_l = ([7.5,7,6.5,6,5.5,5,4.5,4,3.5,3,2.5,2,1.5,1,0.5,-0.5,-1,-1.5,-2,-2.5,-3,-3.5,-4,-4.5,-5,-5.5,-6,-6.5,-7,-7.5,-8,-8.5,-9,-9.5,-10])
+        self.animtime = 175
 
+    def obstacle_collision(self, rect , movement, tiles):
+        collision_type = {'top': False, 'bottom': False, 'right': False, 'left': False}
+        self.rect.x += movement[0] 
+        hit_list = Game.tile_collision(self,rect,tiles)
+        for tile in hit_list:
+            #Überprüfung ob rechts läuft
+            if movement[0] > 0:
+                self.rect.right = tile.rect.left
+                collision_type['right'] = True
+                #Überprüfung ob links läuft 
+            if movement[0] < 0:
+                self.rect.left= tile.rect.right
+                collision_type['left'] = True
+        self.rect.y += movement[1]
+        hit_list = Game.tile_collision(self,rect,tiles)
+        for tile in hit_list:
+            #Überprüfung ob mit Boden berührt (Y Achse)
+            if movement[1] < 0:
+                collision_type['bottom'] = True
+                self.rect.top = tile.rect.bottom
+            if movement[1] > 0:
+                collision_type['top'] = True
+                self.rect.bottom = tile.rect.top
+            if collision_type['bottom']:
+                self.player_y_momentum = 0
+        return rect, collision_type
+
+    def movement(self,rect, movement, tiles):
+        collision_type = {'top': False, 'bottom': False, 'right': False, 'left': False}
+        self.rect.x += movement[0] 
+        hit_list = Game.tile_collision(self,rect,tiles)
+        for tile in hit_list:
+            #Überprüfung ob rechts läuft
+            if movement[0] > 0:
+                self.rect.right = tile.rect.left
+                collision_type['right'] = True
+                #Überprüfung ob links läuft 
+            if movement[0] < 0:
+                self.rect.left= tile.rect.right
+                collision_type['left'] = True
+        self.rect.y += movement[1]
+        hit_list = Game.tile_collision(self,rect,tiles)
+        for tile in hit_list:
+            #Überprüfung ob mit Boden berührt (Y Achse)
+            if movement[1] < 0:
+                collision_type['bottom'] = True
+                self.rect.top = tile.rect.bottom
+            if movement[1] > 0:
+                collision_type['top'] = True
+                self.rect.bottom = tile.rect.top
+            if collision_type['bottom']:
+                self.player_y_momentum = 0
+        return rect, collision_type
+
+    def moving(self, direction):
+        self.enemy_movement = [0,0]
+        if direction == "right":
+            for i in range(2):
+                self.look_left = True
+                if self.look_right == True:
+                    bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"walk_{i}.png"))
+                    final = pygame.transform.scale(bitmap, (Settings.enemy_size))
+                    self.anim.append(final)
+            self.idle_append()
+            self.enemy_movement[0] += 2
+        if direction == "left":
+            self.look_right = False
+            self.look_left = True
+            self.enemy_movement[0] -= 2
+            for i in range(2):
+                if self.look_left == True:
+                    bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"walk_{i}.png"))
+                    transformed = pygame.transform.flip(bitmap, True, False)
+                    final = pygame.transform.scale(transformed, (Settings.enemy_size))
+                    self.anim.append(final)
+            self.idle_append()
+        if direction == "jump":
+            self.jumping = True
+        self.enemy_movement[1] += self.enemy_y_momentum
+        self.enemy_y_momentum += 0.2
+        if self.enemy_y_momentum > 3:
+            self.enemy_y_momentum = 3
+
+        self.enemy_rect, self.collisions = self.movement(self.rect, self.enemy_movement, self.game.level.terrain_sprites)
 
     def animation(self):
         if pygame.time.get_ticks() > self.clock_time:
@@ -252,78 +339,55 @@ class Enemy(pygame.sprite.Sprite):
 
     def idle_append(self):
         if self.look_left:
-            self.anim.clear()
-            bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, "idle.png"))
-            transformed = pygame.transform.flip(bitmap, True, False)
-            final = pygame.transform.scale(transformed, (Settings.player_size))
-            self.anim.append(final)
-        if self.look_left == False:
-            self.anim.clear()
-            bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, "idle.png"))
-            final = pygame.transform.scale(bitmap, (Settings.enemy_size))
-            self.anim.append(final)
-
-    def moveRight(self):
-        self.look_right = True
-        self.look_left = False
-        self.anim.clear()
-        self.rect.left = self.rect.left + 1
-        for i in range(2):
-            if self.look_right == True:
-                bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"walk_{i}.png"))
-                final = pygame.transform.scale(bitmap, (Settings.enemy_size))
-                self.anim.append(final)
-        
-    def moveLeft(self):
-        self.look_right = False
-        self.look_left = True
-        self.anim.clear()
-        self.rect.left = self.rect.left - 1
-        for i in range(2):
-            if self.look_left == True:
-                bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"walk_{i}.png"))
+            for i in range(2):
+                bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"idle_{i}.png"))
                 transformed = pygame.transform.flip(bitmap, True, False)
                 final = pygame.transform.scale(transformed, (Settings.enemy_size))
+                self.anim.append(final)
+        if self.look_left == False:
+            for i in range (2):
+                bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"idle_{i}.png"))
+                final = pygame.transform.scale(bitmap, (Settings.enemy_size))
                 self.anim.append(final)
 
     #Funktion zum springen eines Sprites
     def jump(self):
-        if self.rect.top > self.platform_y:
+        #Legt das springen so fest das er nur auf der angelegten platform_y höhe bleiben kann
+        if self.rect.top > self.platform_y: 
             self.rect.top = self.platform_y
             self.jumping = False
-            self.velocity_index = 0
-        if self.jumping:
-            self.anim.clear()
-            bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, "jump.png"))
-            transformed = pygame.transform.flip(bitmap, True, False)
-            self.anim.append(transformed)
-            self.rect.top += self.velocity[self.velocity_index]
-            self.velocity_index += 1
-            if self.velocity_index >= len(self.velocity) -1:
-                self.velocity_index = len(self.velocity) - 1
-        # if self.jumping and self.look_right:
+            self.velocity_index = 0  
+        # elif self.jumping == True and self.look_right == True:
         #     self.anim.clear()
-        #     bitmap = pygame.image.load(os.path.join(Settings.path_image, "jump.png"))
-        #     self.anim.append(bitmap)
+        #     bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, "jump.png"))
+        #     final = pygame.transform.scale(bitmap, (Settings.enemy_size))
+        #     self.anim.append(final)
         #     self.rect.top += self.velocity[self.velocity_index]
         #     self.velocity_index += 1
         #     if self.velocity_index >= len(self.velocity) -1:
-        #         self.velocity_index = len(self.velocity) - 1                 
+        #         self.velocity_index = len(self.velocity) - 1                  
 
-    def respawn(self):
-        Player.rect.left = 335
-        Player.rect.top = 500
+    # def respawn(self):
+    #     self.curhealth = 100
+    #     Game.points = 0
+    #     Game.deathscreen(self)
+    #     self.rect.left = 335
+    #     self.rect.top = 500
 
     def update(self):
         if self.rect.left <= 0 or self.rect.right >= Settings.window_width:
             self.change_direction_h()
         if self.rect.top <= 0 or self.rect.bottom >= Settings.window_height:
             self.change_direction_v()
-        self.rect.move_ip((self.speed_h, self.speed_v))
         self.animation()
+        # if self.curhealth <= 0:
+        #     Player.respawn(self)
 
-    def draw(self, screen):
-        screen.blit(self.image,self.rect)
+    def draw(self, screen, scrolling_offset):
+        #Malen der Spielerpositionen jeweils nach Bewegung
+            #screen.blit(self.image ,(self.rect.left + scrolling_offset[0], self.rect.top + scrolling_offset[1]))
+            screen.blit(self.image, (self.rect.x, self.rect.y))
+            #screen.blit(self.image, (0 - game.camera.offset.x, 0 - game.camera.offset.y))
 
     def change_direction_h(self):
         self.speed_h *= -1
@@ -348,11 +412,6 @@ class Game(object):
         pygame.display.set_caption(Settings.title)
         self.clock = pygame.time.Clock()
         self.player = Player("player.png", self)
-        self.camera = Camera(self.player)
-        self.follow = Follow(self.camera,self.player)
-        self.border = Border(self.camera,self.player)
-        self.auto = Auto(self.camera,self.player)
-        self.camera.setmethod(self.follow)
         self.enemy = pygame.sprite.Group()
         self.running = True
         self.startbutton = pygame.image.load(os.path.join(Settings.path_image, "start.png"))
@@ -372,8 +431,15 @@ class Game(object):
     # def drawlives(self):
     #     pygame.draw.rect(self.screen,Settings.white,(10,10,Player.curhealth/self.health_ratio,25))
     #     pygame.display.flip()
-    
-    
+
+
+    #Überprüft auf Kollision mit Gegner
+    def enemy_collision(self):
+        for enemy in self.enemy:
+            get_hit = pygame.sprite.spritecollideany(self.player,self.enemy)
+            if get_hit:
+                self.enemy.remove(enemy)
+
     def damage(self, amount):
         if self.curhealth > 0:
             self.curhealth -= amount
@@ -395,18 +461,21 @@ class Game(object):
         return hit_list
 
 
-    def aimove(self):
-        for e in self.enemy:
-            if e.rect.left <= 0:
-                e.look_left = False
-                e.look_right = True
-            if e.rect.right == Settings.window_width - 50:
-                e.look_right = False
-                e.look_left = True
-            if  e.look_left:
-                e.moveLeft()
-            if e.look_right:
-                e.moveRight()
+    # def aimove(self):
+    #     for e in self.enemy:
+    #         if self.enemy.enemy_movement[0] > 0:
+    #             self.enemy.look_right = True
+    #             self.enemy.look_left = False
+    #         if self.enemy.enemy_movement[0] < 0:
+    #             self.enemy.look_left = True
+    #             self.enemy.look_right = False
+    #         if e.rect.right == Settings.window_width - 50:
+    #             self.enemy.look_right = False
+    #             self.enemy.look_left = True
+    #         if  self.enemy.look_left:
+    #             self.enemy.enemy_movement[0] -= 2
+    #         if e.look_right:
+    #             self.enemy.enemy_movement[0] += 2
 
     def pausescreen(self):
         pause = True
@@ -471,22 +540,22 @@ class Game(object):
                 self.pausescreen()
             #self.startmenu()
             self.clock.tick(60)                     
-            self.watch_for_events()
+            self.watch_for_events()#
+            self.enemy_collision()
             self.update()
             self.draw()
             self.player.jump()
-            self.aimove()
+            #self.aimove()
             self.level.run()
+            self.player.moving("")
         pygame.quit()       
 
 
     def keybindings(self):
         control = pygame.key.get_pressed()
         if control[pygame.K_d]:
-            self.player.look_left = False
             self.player.moving("right")
         if control[pygame.K_a]:
-            self.player.look_right = False
             self.player.moving("left")
         if control[pygame.K_SPACE]:
             self.player.player_y_momentum = -3
@@ -508,7 +577,6 @@ class Game(object):
 
     def update(self):
         self.player.update()
-        self.camera.scroll()
         self.enemy.update()
         self.keybindings()
         
@@ -520,7 +588,7 @@ class Game(object):
         # self.startbutton.draw(self.screen)
         # self.screen.blit(self.startbutton)
         # self.screen.blit(self.stopbutton,(200,200))
-        self.screen.blit(self.player.image, (self.player.rect.x - self.camera.offset.x, self.player.rect.y - self.camera.offset.y))
+        self.screen.blit(self.player.image, self.scrolling_offset)
         pygame.display.flip()
 
 
