@@ -59,21 +59,22 @@ class Level():
                     self.sprite_group.add(sprite)
         return self.sprite_group
 
-    def run(self):
+    def run(self, scrolling_offset):
         #self.game.background.draw(self.game.screen)
             #Background
         for tile in self.backround_sprites:
-            tile.draw(self.game.scrolling_offset, self.display_surface)
+            tile.draw(scrolling_offset, self.display_surface)
             tile.updatee(1)
             #Terrain
         for tile in self.terrain_sprites:
-            tile.draw(self.game.scrolling_offset , self.display_surface)
+            tile.draw(scrolling_offset , self.display_surface)
             tile.updatee(1)
             #Ground
         for tile in self.ground_sprites:
-            tile.draw(self.game.scrolling_offset, self.display_surface)
+            tile.draw(scrolling_offset, self.display_surface)
             tile.updatee(1)
             #Hindernisse
         for tile in self.obstacle_sprites:
-            tile.draw(self.game.scrolling_offset, self.display_surface)
+            tile.draw(scrolling_offset, self.display_surface)
             tile.updatee(1)
+        

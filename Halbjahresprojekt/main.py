@@ -43,14 +43,15 @@ class Player(pygame.sprite.Sprite):
         self.image = self.anim[self.imgindex]
         self.rect = self.image.get_rect()
         self.rect.left = 10 #x
-        self.rect.top = 800 #y
+        self.rect.top = 270 #y
+        self.origin_rect = self.rect.copy()
         self.speed_h = 0
         self.player_y_momentum = 0
         self.speed_v = 0
         self.look_left = False
         self.look_right = True
         self.jumping = False
-        self.platform_y = 270
+        self.platform_y = 280
         self.velocity_index = 0
         self.clock_time = pygame.time.get_ticks()
         self.velocity = ([-7.5,-7,-6.5,-6,-5.5,-5,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10])
@@ -64,32 +65,10 @@ class Player(pygame.sprite.Sprite):
             if self.curhealth <= 0:
                 self.die()
 
-    def obstacle_collision(self, rect , movement, tiles):
-        collision_type = {'top': False, 'bottom': False, 'right': False, 'left': False}
-        self.rect.x += movement[0] 
-        hit_list = Game.tile_collision(self,rect,tiles)
-        for tile in hit_list:
-            #Überprüfung ob rechts läuft
-            if movement[0] > 0:
-                self.rect.right = tile.rect.left
-                collision_type['right'] = True
-                #Überprüfung ob links läuft 
-            if movement[0] < 0:
-                self.rect.left= tile.rect.right
-                collision_type['left'] = True
-        self.rect.y += movement[1]
-        hit_list = Game.tile_collision(self,rect,tiles)
-        for tile in hit_list:
-            #Überprüfung ob mit Boden berührt (Y Achse)
-            if movement[1] < 0:
-                collision_type['bottom'] = True
-                self.rect.top = tile.rect.bottom
-            if movement[1] > 0:
-                collision_type['top'] = True
-                self.rect.bottom = tile.rect.top
-            if collision_type['bottom']:
-                self.player_y_momentum = 0
-        return rect, collision_type
+    def obstacle_collision(self):
+        print(self.game.level.obstacle_sprites)
+        if pygame.sprite.spritecollide(self,self.game.level.obstacle_sprites, False):
+            print("tot")
 
     def movement(self,rect, movement, tiles):
         collision_type = {'top': False, 'bottom': False, 'right': False, 'left': False}
@@ -129,7 +108,7 @@ class Player(pygame.sprite.Sprite):
                     self.anim.append(final)
             self.idle_append()
             self.player_movement[0] += 2
-        if direction == "left":
+        elif direction == "left":
             self.look_right = False
             self.look_left = True
             self.player_movement[0] -= 2
@@ -140,13 +119,14 @@ class Player(pygame.sprite.Sprite):
                     final = pygame.transform.scale(transformed, (Settings.player_size))
                     self.anim.append(final)
             self.idle_append()
+        else:
+            self.player_movement[0] = 0
         if direction == "jump":
             self.jumping = True
         self.player_movement[1] += self.player_y_momentum
         self.player_y_momentum += 0.2
         if self.player_y_momentum > 3:
             self.player_y_momentum = 3
-
         self.player_rect, self.collisions = self.movement(self.rect, self.player_movement, self.game.level.terrain_sprites)
 
     def animation(self):
@@ -200,14 +180,14 @@ class Player(pygame.sprite.Sprite):
         if self.rect.top <= 0 or self.rect.bottom >= Settings.window_height:
             self.change_direction_v()
         self.animation()
+        self.obstacle_collision()
         # if self.curhealth <= 0:
         #     Player.respawn(self)
 
     def draw(self, screen, scrolling_offset):
         #Malen der Spielerpositionen jeweils nach Bewegung
-            #screen.blit(self.image ,(self.rect.left + scrolling_offset[0], self.rect.top + scrolling_offset[1]))
-            screen.blit(self.image, (self.rect.x, self.rect.y))
-            #screen.blit(self.image, (0 - game.camera.offset.x, 0 - game.camera.offset.y))
+        #self.rect.x, self.rect.y = self.rect.x + scrolling_offset[0], self.rect.y + scrolling_offset[1]
+        screen.blit(self.image, self.rect)
 
     def change_direction_h(self):
         self.speed_h *= -1
@@ -225,7 +205,7 @@ class Enemy(pygame.sprite.Sprite):
         self.dead = False
         self.imgindex = 0
         bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, "idle.png"))
-        final = pygame.transform.scale(bitmap, (Settings.player_size))
+        final = pygame.transform.scale(bitmap, (Settings.enemy_size))
         self.anim.append(final)
         self.image = self.anim[self.imgindex]
         self.rect = self.image.get_rect()
@@ -244,32 +224,6 @@ class Enemy(pygame.sprite.Sprite):
         self.velocity_l = ([7.5,7,6.5,6,5.5,5,4.5,4,3.5,3,2.5,2,1.5,1,0.5,-0.5,-1,-1.5,-2,-2.5,-3,-3.5,-4,-4.5,-5,-5.5,-6,-6.5,-7,-7.5,-8,-8.5,-9,-9.5,-10])
         self.animtime = 175
 
-    def obstacle_collision(self, rect , movement, tiles):
-        collision_type = {'top': False, 'bottom': False, 'right': False, 'left': False}
-        self.rect.x += movement[0] 
-        hit_list = Game.tile_collision(self,rect,tiles)
-        for tile in hit_list:
-            #Überprüfung ob rechts läuft
-            if movement[0] > 0:
-                self.rect.right = tile.rect.left
-                collision_type['right'] = True
-                #Überprüfung ob links läuft 
-            if movement[0] < 0:
-                self.rect.left= tile.rect.right
-                collision_type['left'] = True
-        self.rect.y += movement[1]
-        hit_list = Game.tile_collision(self,rect,tiles)
-        for tile in hit_list:
-            #Überprüfung ob mit Boden berührt (Y Achse)
-            if movement[1] < 0:
-                collision_type['bottom'] = True
-                self.rect.top = tile.rect.bottom
-            if movement[1] > 0:
-                collision_type['top'] = True
-                self.rect.bottom = tile.rect.top
-            if collision_type['bottom']:
-                self.player_y_momentum = 0
-        return rect, collision_type
 
     def movement(self,rect, movement, tiles):
         collision_type = {'top': False, 'bottom': False, 'right': False, 'left': False}
@@ -386,7 +340,7 @@ class Enemy(pygame.sprite.Sprite):
     def draw(self, screen, scrolling_offset):
         #Malen der Spielerpositionen jeweils nach Bewegung
             #screen.blit(self.image ,(self.rect.left + scrolling_offset[0], self.rect.top + scrolling_offset[1]))
-            screen.blit(self.image, (self.rect.x, self.rect.y))
+            screen.blit(self.image, (self.rect.x + scrolling_offset[0], self.rect.y + scrolling_offset[1]))
             #screen.blit(self.image, (0 - game.camera.offset.x, 0 - game.camera.offset.y))
 
     def change_direction_h(self):
@@ -407,6 +361,7 @@ class Game(object):
         self.health_length = 1000
         self.health_ratio = self.maxhealth / self.health_length
         self.scrolling_offset = [0,0]
+        self.scrolling_origin = [0,0]
         self.screen = pygame.display.set_mode((Settings.window_width, Settings.window_height))
         self.level = Level(level_0,self.screen,self)
         pygame.display.set_caption(Settings.title)
@@ -421,8 +376,14 @@ class Game(object):
         self.creditssbutton = pygame.image.load(os.path.join(Settings.path_image, "credits.png"))
         self.creditsrect = self.creditssbutton.get_rect()
 
-
-    #Malt die Punkteanzeige
+    def calc_scroll(self):
+        self.scrolling_origin[0] += (self.player.rect.x - self.scrolling_origin[0] - ( Settings.player_size[0] // 2)) / 10
+        # self.scrolling_origin[1] += (self.player.rect.y - self.scrolling_origin[1]) / 10
+        self.scrolling_offset = self.scrolling_origin.copy()
+        self.scrolling_offset[0] = int(self.scrolling_offset[0])
+        # self.scrolling_offset[1] = int(self.scrolling_offset[1])
+    
+        #Malt die Punkteanzeige
     # def drawpoints(self):
     #     pointtext = Settings.font.render(f"Points: {self.points}", False, (Settings.white))
     #     self.screen.blit(pointtext,(300,500))
@@ -540,13 +501,14 @@ class Game(object):
                 self.pausescreen()
             #self.startmenu()
             self.clock.tick(60)                     
-            self.watch_for_events()#
+            self.watch_for_events()
+            self.calc_scroll()
             self.enemy_collision()
             self.update()
+            self.level.run(self.scrolling_offset)
             self.draw()
             self.player.jump()
             #self.aimove()
-            self.level.run()
             self.player.moving("")
         pygame.quit()       
 
@@ -558,7 +520,7 @@ class Game(object):
         if control[pygame.K_a]:
             self.player.moving("left")
         if control[pygame.K_SPACE]:
-            self.player.player_y_momentum = -3
+            self.player.player_y_momentum = - 3
         if control[pygame.K_ESCAPE]:
             self.pausescreen()
         if control[pygame.K_x]:
@@ -573,6 +535,7 @@ class Game(object):
                 self.running = False
             if event.type == pygame.KEYUP:
                 self.player.idle_append()
+                self.player.player_movement = [0,0]
 
 
     def update(self):
@@ -582,7 +545,7 @@ class Game(object):
         
 
     def draw(self):
-        self.player.draw(self.screen, self.scrolling_offset)
+        self.player.draw(self.screen,self.scrolling_offset)
         self.enemy.draw(self.screen)
         #self.drawlives()
         # self.startbutton.draw(self.screen)
