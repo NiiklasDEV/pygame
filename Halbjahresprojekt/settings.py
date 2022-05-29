@@ -8,7 +8,7 @@ class Settings(object):
     path_image_enemy = os.path.join(path_image, "enemy_images")
     path_image_player = os.path.join(path_image, "player_images")
     player_size = (43,43)
-    enemy_size = (64,64)
+    enemy_size = (43,32)
     platform_size = (100,100)
     pygame.font.init()
     global tile_size
