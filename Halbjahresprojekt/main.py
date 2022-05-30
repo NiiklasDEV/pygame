@@ -68,7 +68,7 @@ class Player(pygame.sprite.Sprite):
                 self.die()
 
     def player_shoot(self):
-        return Bullet(self.rect.x + 40, self.rect.y + 30)
+            return Bullet(self.rect.x + 40, self.rect.y + 30)
 
     def die(self):
         self.dead = True
@@ -121,11 +121,13 @@ class Player(pygame.sprite.Sprite):
                     final = pygame.transform.scale(bitmap, (Settings.player_size))
                     self.anim.append(final)
             self.idle_append()
-            self.player_movement[0] += 2
+            if self.rect.x < Settings.window_width - 50:
+                self.player_movement[0] += 2
         elif direction == "left":
             self.look_right = False
             self.look_left = True
-            self.player_movement[0] -= 2
+            if self.rect.x < Settings.window_width:
+                self.player_movement[0] -= 2
             for i in range(2):
                 self.anim.clear()
                 if self.look_left == True:
@@ -210,10 +212,13 @@ class Player(pygame.sprite.Sprite):
     def change_direction_v(self):
         self.speed_v *= -1
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y) -> None:
+    def __init__(self, pos_x, pos_y, image) -> None:
+        #Implement bullet lookleft and lookright logic
         super().__init__()
         self.image = pygame.image.load(os.path.join(Settings.path_image_player, "bullet.png"))
+        self.image_left = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect(center = (pos_x,pos_y))
+        self.rect_left = self.image_left.get_rect(center = (pos_x,pos_y))
 
     def update(self):
         self.rect.x += 2
@@ -393,6 +398,10 @@ class Game(object):
         self.health_ratio = self.maxhealth / self.health_length
         self.scrolling_offset = [0,0]
         self.scrolling_origin = [0,0]
+        #self.jump_sound = pygame.mixer.Sound(os.path.join(Settings.path_sound, "jump.wav"))
+        pygame.mixer.music.load(os.path.join(Settings.path_sound, "music.wav"))
+        pygame.mixer.music.play()
+        pygame.mixer.music.set_volume(0.1)
         self.screen = pygame.display.set_mode((Settings.window_width, Settings.window_height))
         self.level = Level(level_0,self.screen,self)
         pygame.display.set_caption(Settings.title)
@@ -408,10 +417,11 @@ class Game(object):
         self.creditsrect = self.creditssbutton.get_rect()
 
     def calc_scroll(self):
-        self.scrolling_origin[0] += (self.player.rect.x - self.scrolling_origin[0] - ( Settings.player_size[0] // 2)) / 10
+        if self.player.rect.x < Settings.window_width - 435:
+            self.scrolling_origin[0] += (self.player.rect.x - self.scrolling_origin[0] - ( Settings.player_size[0] // 2)) / 10
         # self.scrolling_origin[1] += (self.player.rect.y - self.scrolling_origin[1]) / 10
-        self.scrolling_offset = self.scrolling_origin.copy()
-        self.scrolling_offset[0] = int(self.scrolling_offset[0])
+            self.scrolling_offset = self.scrolling_origin.copy()
+            self.scrolling_offset[0] = int(self.scrolling_offset[0])
         # self.scrolling_offset[1] = int(self.scrolling_offset[1])
     
         #Malt die Punkteanzeige
