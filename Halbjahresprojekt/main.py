@@ -31,11 +31,13 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         self.game = game
         self.curhealth = 100
+        self.shooting = False
         self.image = pygame.image.load(os.path.join(Settings.path_image, filename))
         self.image = pygame.transform.scale(self.image, Settings.player_size)
         self.anim = []
         self.dead = False
         self.imgindex = 0
+        self.death_sound = pygame.mixer.Sound(os.path.join(Settings.path_sound, "death.wav"))
         self.points = 0
         for i in range(2):
             bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"idle_{i}.png"))
@@ -68,10 +70,13 @@ class Player(pygame.sprite.Sprite):
                 self.die()
 
     def player_shoot(self):
+            self.shooting = True
             return Bullet(self.rect.x + 40, self.rect.y + 30)
 
     def die(self):
         self.dead = True
+        self.death_sound.play()
+        pygame.mixer.music.fadeout(1000)
         Game.deathscreen(game)
         for enemy in self.game.enemy:
             self.game.enemy.remove(enemy)
@@ -106,8 +111,9 @@ class Player(pygame.sprite.Sprite):
             if movement[1] > 0:
                 collision_type['top'] = True
                 self.rect.bottom = tile.rect.top
-            if collision_type['bottom']:
                 self.player_y_momentum = 0
+            if collision_type['bottom']:
+                self.player_y_momentum = 1
         return rect, collision_type
 
     def moving(self, direction):
@@ -115,26 +121,25 @@ class Player(pygame.sprite.Sprite):
         if direction == "right":
             for i in range(2):
                 self.anim.clear()
-                self.look_left = True
-                if self.look_right == True:
-                    bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"walk_{i}.png"))
-                    final = pygame.transform.scale(bitmap, (Settings.player_size))
-                    self.anim.append(final)
+                bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"walk_{i}.png"))
+                final = pygame.transform.scale(bitmap, (Settings.player_size))
+                self.anim.append(final)
+                self.look_right = True
+                self.look_left = False
             self.idle_append()
             if self.rect.x < Settings.window_width - 50:
                 self.player_movement[0] += 2
         elif direction == "left":
-            self.look_right = False
-            self.look_left = True
             if self.rect.x < Settings.window_width:
                 self.player_movement[0] -= 2
             for i in range(2):
                 self.anim.clear()
-                if self.look_left == True:
-                    bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"walk_{i}.png"))
-                    transformed = pygame.transform.flip(bitmap, True, False)
-                    final = pygame.transform.scale(transformed, (Settings.player_size))
-                    self.anim.append(final)
+                bitmap = pygame.image.load(os.path.join(Settings.path_image_player, f"walk_{i}.png"))
+                transformed = pygame.transform.flip(bitmap, True, False)
+                final = pygame.transform.scale(transformed, (Settings.player_size))
+                self.anim.append(final)
+                self.look_left = True
+                self.look_right = False
             self.idle_append()
         else:
             self.player_movement[0] = 0
@@ -185,6 +190,7 @@ class Player(pygame.sprite.Sprite):
         #         self.velocity_index = len(self.velocity) - 1                  
 
     def respawn(self):
+        pygame.mixer.music.play()
         self.player.dead = False
         self.player.curhealth = 100
         self.points = 0
@@ -212,7 +218,7 @@ class Player(pygame.sprite.Sprite):
     def change_direction_v(self):
         self.speed_v *= -1
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, image) -> None:
+    def __init__(self, pos_x, pos_y) -> None:
         #Implement bullet lookleft and lookright logic
         super().__init__()
         self.image = pygame.image.load(os.path.join(Settings.path_image_player, "bullet.png"))
@@ -221,7 +227,10 @@ class Bullet(pygame.sprite.Sprite):
         self.rect_left = self.image_left.get_rect(center = (pos_x,pos_y))
 
     def update(self):
-        self.rect.x += 2
+        if  game.player.look_right and game.player.shooting:
+            self.rect.x += 2
+        if game.player.look_left and game.player.shooting:
+            self.rect.x -= 2
 
         if self.rect.x > Settings.window_width:
             self.kill()
@@ -267,6 +276,7 @@ class Enemy(pygame.sprite.Sprite):
             if self.enemy_movement[0] > 0:
                 self.rect.right = tile.rect.left
                 collision_type['right'] = True
+                self.look_right = True
                 #Überprüfung ob links läuft 
             if self.enemy_movement[0] < 0:
                 self.rect.left= tile.rect.right
@@ -288,28 +298,29 @@ class Enemy(pygame.sprite.Sprite):
     def moving(self, direction):
         self.enemy_movement = [0,0]
         if direction == "right":
+            self.anim.clear()
             for i in range(2):
-                self.look_left = True
-                if self.look_right == True:
-                    bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"walk_{i}.png"))
-                    final = pygame.transform.scale(bitmap, (Settings.enemy_size))
-                    self.anim.append(final)
+                bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"walk_{i}.png"))
+                sprite = pygame.transform.scale(bitmap, (Settings.enemy_size))
+                self.anim.append(sprite)
             self.idle_append()
             #Dont run out the Window
             if self.rect > Settings.window_width:
                 self.enemy_movement[0] += 2
+                self.look_right = True
         if direction == "left":
             self.look_right = False
             self.look_left = True
             #Dont run out the Window
             if self.rect > Settings.window_width:
                 self.enemy_movement[0] -= 2
+                self.look_left = True
+            self.anim.clear()
             for i in range(2):
-                if self.look_left == True:
-                    bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"walk_{i}.png"))
-                    transformed = pygame.transform.flip(bitmap, True, False)
-                    final = pygame.transform.scale(transformed, (Settings.enemy_size))
-                    self.anim.append(final)
+                bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"walk_{i}.png"))
+                transformed = pygame.transform.flip(bitmap, False, True)
+                final = pygame.transform.scale(transformed, (Settings.enemy_size))
+                self.anim.append(final)
             self.idle_append()
         if direction == "jump":
             self.jumping = True
@@ -393,12 +404,12 @@ class Game(object):
         self.dead = False
         self.pause = False
         self.startmenue = True
+        self.jumping_sound = pygame.mixer.Sound(os.path.join(Settings.path_sound, "jump.wav"))
         self.maxhealth = 1000
         self.health_length = 1000
         self.health_ratio = self.maxhealth / self.health_length
         self.scrolling_offset = [0,0]
         self.scrolling_origin = [0,0]
-        #self.jump_sound = pygame.mixer.Sound(os.path.join(Settings.path_sound, "jump.wav"))
         pygame.mixer.music.load(os.path.join(Settings.path_sound, "music.wav"))
         pygame.mixer.music.play()
         pygame.mixer.music.set_volume(0.1)
@@ -614,6 +625,8 @@ class Game(object):
         if control[pygame.K_a]:
             self.player.moving("left")
         if control[pygame.K_SPACE]:
+            self.jumping_sound.set_volume(0.1)
+            self.jumping_sound.play(0,0)
             self.player.player_y_momentum = - 3
         if control[pygame.K_ESCAPE]:
             self.pausescreen()
