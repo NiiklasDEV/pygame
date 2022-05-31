@@ -71,7 +71,10 @@ class Player(pygame.sprite.Sprite):
 
     def player_shoot(self):
             self.shooting = True
-            return Bullet(self.rect.x + 40, self.rect.y + 30)
+            if self.look_right:
+                return Bullet(self.rect.x + 40, self.rect.y + 30, "right", self.game)
+            else:
+                return Bullet(self.rect.x + 40, self.rect.y + 30, "left", self.game)
 
     def die(self):
         self.dead = True
@@ -142,11 +145,21 @@ class Player(pygame.sprite.Sprite):
                 self.look_right = False
             self.idle_append()
         else:
+            self.idle_append()
             self.player_movement[0] = 0
-        if direction == "jump":
+        if direction == "jump" and self.look_right:
             self.jumping = True
+            bitmap = pygame.image.load(os.path.join(Settings.path_image_player, "jump.png"))
+            transformed = pygame.transform.scale(bitmap, (Settings.player_size))
+            self.anim.append(transformed)
         self.player_movement[1] += self.player_y_momentum
         self.player_y_momentum += 0.2
+        if direction == "jump" and self.look_left:
+            self.jumping = True
+            bitmap = pygame.image.load(os.path.join(Settings.path_image_player, "jump.png"))
+            transformed = pygame.transform.flip(bitmap, True, False)
+            final = pygame.transform.scale(transformed, (Settings.player_size))
+            self.anim.append(final)
         if self.player_y_momentum > 3:
             self.player_y_momentum = 3
         self.player_rect, self.collisions = self.movement(self.rect, self.player_movement, self.game.level.terrain_sprites)
@@ -218,18 +231,19 @@ class Player(pygame.sprite.Sprite):
     def change_direction_v(self):
         self.speed_v *= -1
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y) -> None:
+    def __init__(self, pos_x, pos_y, direction, game) -> None:
         #Implement bullet lookleft and lookright logic
         super().__init__()
         self.image = pygame.image.load(os.path.join(Settings.path_image_player, "bullet.png"))
         self.image_left = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect(center = (pos_x,pos_y))
         self.rect_left = self.image_left.get_rect(center = (pos_x,pos_y))
+        self.direction = direction
 
     def update(self):
-        if  game.player.look_right and game.player.shooting:
+        if self.direction == "right":
             self.rect.x += 2
-        if game.player.look_left and game.player.shooting:
+        elif self.direction == "left":
             self.rect.x -= 2
 
         if self.rect.x > Settings.window_width:
@@ -544,8 +558,9 @@ class Game(object):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
-                    quit()
                 if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        pygame.quit()
                     if event.key == pygame.K_SPACE:
                         Player.respawn(self)
 
