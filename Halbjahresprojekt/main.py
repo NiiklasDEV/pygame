@@ -65,7 +65,6 @@ class Player(pygame.sprite.Sprite):
     def enemy_collision(self):
         if pygame.sprite.collide_mask(self.player_rect,Enemy.rect):
             self.game.damage(50)
-            print(self.curhealth)
             if self.curhealth <= 0:
                 self.die()
 
@@ -148,7 +147,6 @@ class Player(pygame.sprite.Sprite):
             self.idle_append()
             self.player_movement[0] = 0
         if direction == "jump" and self.look_right:
-            self.jumping = True
             bitmap = pygame.image.load(os.path.join(Settings.path_image_player, "jump.png"))
             transformed = pygame.transform.scale(bitmap, (Settings.player_size))
             self.anim.append(transformed)
@@ -185,7 +183,6 @@ class Player(pygame.sprite.Sprite):
                 final = pygame.transform.scale(bitmap, (Settings.player_size))
                 self.anim.append(final)
 
-    #Funktion zum springen eines Sprites
     def jump(self):
         #Legt das springen so fest das er nur auf der angelegten platform_y höhe bleiben kann
         if self.rect.top > self.platform_y: 
@@ -204,11 +201,12 @@ class Player(pygame.sprite.Sprite):
 
     def respawn(self):
         pygame.mixer.music.play()
-        self.player.dead = False
         self.player.curhealth = 100
-        self.points = 0
+        print("works")
+        self.player.points = 0
         self.player.rect.left = 10
         self.player.rect.top = 270
+        self.player.dead = False
 
     def update(self):
         if self.rect.left <= 0 or self.rect.right >= Settings.window_width:
@@ -221,7 +219,6 @@ class Player(pygame.sprite.Sprite):
         #     Player.respawn(self)
 
     def draw(self, screen):
-        #Malen der Spielerpositionen jeweils nach Bewegung
         #self.rect.x, self.rect.y = self.rect.x + scrolling_offset[0], self.rect.y + scrolling_offset[1]
         screen.blit(self.image, self.rect)
 
@@ -232,7 +229,6 @@ class Player(pygame.sprite.Sprite):
         self.speed_v *= -1
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, direction, game) -> None:
-        #Implement bullet lookleft and lookright logic
         super().__init__()
         self.image = pygame.image.load(os.path.join(Settings.path_image_player, "bullet.png"))
         self.image_left = pygame.transform.flip(self.image, True, False)
@@ -250,22 +246,23 @@ class Bullet(pygame.sprite.Sprite):
             self.kill()
         
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, filename):
+    def __init__(self, filename, game):
         super().__init__()
         self.curhealth = 50
+        self.game = game
         self.image = pygame.image.load(os.path.join(Settings.path_image_enemy, filename))
         self.image = pygame.transform.scale(self.image, Settings.enemy_size)
         self.anim = []
         self.dead = False
         self.imgindex = 0
         self.points = 0
-        bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, "idle.png"))
+        bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, "idle_0.png"))
         final = pygame.transform.scale(bitmap, (Settings.enemy_size))
         self.anim.append(final)
         self.image = self.anim[self.imgindex]
         self.rect = self.image.get_rect()
-        self.rect.left = randint(50,Settings.window_width) #x
-        self.rect.top = 270 #y
+        self.rect.left = self.game.player.rect.x + 200
+        self.rect.top = self.game.player.rect.y
         self.speed_h = 0
         self.enemy_y_momentum = 0
         self.speed_v = 0
@@ -313,37 +310,50 @@ class Enemy(pygame.sprite.Sprite):
         self.enemy_movement = [0,0]
         if direction == "right":
             self.anim.clear()
-            for i in range(2):
+            for i in range(4):
                 bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"walk_{i}.png"))
-                sprite = pygame.transform.scale(bitmap, (Settings.enemy_size))
-                self.anim.append(sprite)
-            self.idle_append()
-            #Dont run out the Window
-            if self.rect > Settings.window_width:
-                self.enemy_movement[0] += 2
+                final = pygame.transform.scale(bitmap, (Settings.enemy_size))
+                self.anim.append(final)
                 self.look_right = True
-        if direction == "left":
-            self.look_right = False
-            self.look_left = True
-            #Dont run out the Window
-            if self.rect > Settings.window_width:
-                self.enemy_movement[0] -= 2
-                self.look_left = True
+                self.look_left = False
+            self.idle_append()
+            if self.rect.x < Settings.window_width - 50:
+                self.enemy_movement[0] += 1
+        elif direction == "left":
+            if self.rect.x < Settings.window_width:
+                self.enemy_movement[0] -= 1
             self.anim.clear()
-            for i in range(2):
+            for i in range(4):
                 bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, f"walk_{i}.png"))
-                transformed = pygame.transform.flip(bitmap, False, True)
+                transformed = pygame.transform.flip(bitmap, True, False)
                 final = pygame.transform.scale(transformed, (Settings.enemy_size))
                 self.anim.append(final)
+                self.look_left = True
+                self.look_right = False
             self.idle_append()
-        if direction == "jump":
-            self.jumping = True
+        else:
+            self.idle_append()
+            self.enemy_movement[0] = 0
+        if direction == "jump" and self.look_right:
+            bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, "jump.png"))
+            transformed = pygame.transform.scale(bitmap, (Settings.enemy_size))
+            self.anim.append(transformed)
         self.enemy_movement[1] += self.enemy_y_momentum
         self.enemy_y_momentum += 0.2
+        if direction == "jump" and self.look_left:
+            self.jumping = True
+            bitmap = pygame.image.load(os.path.join(Settings.path_image_enemy, "jump.png"))
+            transformed = pygame.transform.flip(bitmap, True, False)
+            final = pygame.transform.scale(transformed, (Settings.enemy_size))
+            self.anim.append(final)
         if self.enemy_y_momentum > 3:
             self.enemy_y_momentum = 3
-
         self.enemy_rect, self.collisions = self.movement(self.rect, self.enemy_movement, self.game.level.terrain_sprites)
+
+
+    def obstacle_collision(self):
+        if pygame.sprite.spritecollide(self,self.game.level.obstacle_sprites, False):
+                self.kill()
 
     def animation(self):
         if pygame.time.get_ticks() > self.clock_time:
@@ -396,6 +406,7 @@ class Enemy(pygame.sprite.Sprite):
         if self.rect.top <= 0 or self.rect.bottom >= Settings.window_height:
             self.change_direction_v()
         self.animation()
+        self.obstacle_collision()
         # if self.curhealth <= 0:
         #     enemy.respawn(self)
 
@@ -414,6 +425,7 @@ class Game(object):
     def __init__(self) -> None:
         super().__init__()
         pygame.init()
+        self.jumped = 0
         self.click = False
         self.dead = False
         self.pause = False
@@ -440,6 +452,17 @@ class Game(object):
         self.stoptrect = self.stopbutton.get_rect()
         self.creditssbutton = pygame.image.load(os.path.join(Settings.path_image, "credits.png"))
         self.creditsrect = self.creditssbutton.get_rect()
+        self.time_elapsed = 0
+
+
+    def spawn_enemy(self):
+        clock = pygame.time.Clock()
+        if self.time_elapsed > 2500:
+            if len(self.enemy) >= 5:
+                self.enemy.remove(Enemy("idle_0.png",self))
+            else:
+                self.enemy.add(Enemy("idle_0.png",self))
+                self.time_elapsed = 0
 
     def calc_scroll(self):
         if self.player.rect.x < Settings.window_width - 435:
@@ -452,12 +475,12 @@ class Game(object):
         #Malt die Punkteanzeige
     def drawpoints(self):
         pointtext = Settings.font.render(f"Points: {self.player.points}", False, (Settings.white))
-        self.screen.blit(pointtext,(Settings.window_width - 175,5))
-        pygame.display.flip()
+        self.screen.blit(pointtext,(Settings.window_width - 150,5))
+        #pygame.display.flip()
         #Malt die Lebensanzeige
     def drawlives(self):
         pygame.draw.rect(self.screen,Settings.white,(10,10,self.player.curhealth/self.health_ratio,25))
-        pygame.display.flip()
+        #pygame.display.flip()
 
     def bullet_collision(self):
         for tiles in self.level.terrain_sprites:
@@ -479,8 +502,8 @@ class Game(object):
         for enemy in self.enemy:
             get_hit = pygame.sprite.spritecollideany(self.player,self.enemy)
             if get_hit:
-                self.damage(15)
-                self.enemy.remove(enemy)
+                self.damage(25) 
+                enemy.kill()
 
     def enemy_damage(self, amount):
         if self.enemy.curhealth > 0:
@@ -514,19 +537,7 @@ class Game(object):
 
     def aimove(self):
         for e in self.enemy:
-            if e.enemy_movement[0] > 0:
-                e.look_right = True
-                e.look_left = False
-            if e.enemy_movement[0] < 0:
-                e.look_left = True
-                e.look_right = False
-            if e.rect.right == Settings.window_width - 50:
-                e.look_right = False
-                e.look_left = True
-            if  e.look_left:
-                e.enemy_movement[0] -= 2
-            if e.look_right:
-                e.enemy_movement[0] += 2
+            e.moving("left")
 
     def pausescreen(self):
         pause = True
@@ -617,16 +628,16 @@ class Game(object):
                 self.deathscreen()
             if self.pause:
                 self.pausescreen()
-            #self.startmenu()
-            self.clock.tick(60)                     
+            self.dt = self.clock.tick(60)   
+            self.time_elapsed += self.dt                  
             self.watch_for_events()
             self.calc_scroll()
+            self.spawn_enemy()
             self.enemy_collision()
             self.bullet_collision()
             self.update()
             self.level.run(self.scrolling_offset)
             self.draw()
-            self.drawpoints()
             self.player.jump()
             self.aimove()
             self.player.moving("")
@@ -640,15 +651,17 @@ class Game(object):
         if control[pygame.K_a]:
             self.player.moving("left")
         if control[pygame.K_SPACE]:
+            self.jumped += 1
             self.jumping_sound.set_volume(0.1)
             self.jumping_sound.play(0,0)
-            self.player.player_y_momentum = - 3
+            if self.jumped <= 2:
+                self.player.player_y_momentum =- 3
         if control[pygame.K_ESCAPE]:
             self.pausescreen()
-        if control[pygame.K_x]:
-            self.enemy.add(Enemy("idle.png"))
+        # if control[pygame.K_x]:
+        #     self.enemy.add(Enemy("idle_0.png",self))
             
- 
+
     
     def watch_for_events(self):
         for event in pygame.event.get():
@@ -657,8 +670,10 @@ class Game(object):
             if event.type == pygame.KEYUP:
                 self.player.idle_append()
                 self.player.player_movement = [0,0]
+                self.jumped = 0
             if event.type == pygame.MOUSEBUTTONDOWN:
-                self.bullets.add(self.player.player_shoot())
+                if len(self.bullets) <= 5:
+                    self.bullets.add(self.player.player_shoot())
 
 
     def update(self):
@@ -673,6 +688,7 @@ class Game(object):
         self.bullets.draw(self.screen)
         self.enemy.draw(self.screen)
         self.drawlives()
+        self.drawpoints()
         # self.startbutton.draw(self.screen)
         #self.screen.blit(self.stopbutton,(200,200))
         pygame.display.flip()
